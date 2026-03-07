@@ -1,359 +1,346 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Minhas Contas</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minhas Contas</title>
 
-<style>
-body{
-font-family:Arial;
-margin:0;
-background:#f2f2f2;
-}
+    <style>
+        :root {
+            --primary: #1e88e5;
+            --success: #4caf50;
+            --danger: #f44336;
+            --bg: #f8f9fa;
+        }
 
-header{
-background:#1e88e5;
-color:white;
-padding:15px;
-text-align:center;
-font-size:20px;
-}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background: var(--bg);
+            color: #333;
+            line-height: 1.5;
+        }
 
-.mesControle{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:10px;
-background:white;
-}
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
 
-button{
-padding:10px;
-border:none;
-border-radius:8px;
-background:#1e88e5;
-color:white;
-}
+        .mesControle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
 
-.container{
-padding:15px;
-}
+        .mesControle button {
+            background: #eee;
+            color: #333;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
 
-input,select{
-width:100%;
-padding:10px;
-margin-top:5px;
-margin-bottom:10px;
-border-radius:8px;
-border:1px solid #ccc;
-}
+        #mesAtual {
+            font-weight: bold;
+            font-size: 18px;
+        }
 
-.conta{
-background:white;
-padding:10px;
-margin-bottom:10px;
-border-radius:8px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-}
+        .container {
+            padding: 15px;
+            padding-bottom: 100px; /* Espaço para não cobrir o conteúdo final */
+        }
 
-.paga{
-text-decoration:line-through;
-color:gray;
-}
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
 
-.resumo{
-background:white;
-padding:10px;
-border-radius:8px;
-margin-bottom:10px;
-}
+        h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
-.barra{
-height:25px;
-margin-bottom:10px;
-border-radius:5px;
-color:white;
-display:flex;
-align-items:center;
-padding-left:10px;
-}
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 16px; /* Tamanho 16px evita o zoom automático do iOS ao clicar */
+            box-sizing: border-box;
+        }
 
-.pago{
-background:#4caf50;
-}
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
 
-.pendente{
-background:#f44336;
-}
+        button:active {
+            opacity: 0.8;
+        }
 
-</style>
+        .conta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .conta:last-child { border: none; }
+
+        .conta-info strong { display: block; font-size: 16px; }
+        .conta-info span { color: #888; font-size: 14px; }
+
+        .paga .conta-info {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+
+        .acoes { display: flex; gap: 10px; }
+        
+        .btn-check { background: var(--success); width: 40px; padding: 10px; }
+        .btn-del { background: var(--danger); width: 40px; padding: 10px; }
+
+        .resumo-valores {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .valor-box {
+            background: #f1f3f4;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .valor-box small { display: block; font-size: 12px; color: #666; }
+        .valor-box b { font-size: 16px; }
+
+        .saldo-box {
+            text-align: center;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .barra-progresso {
+            height: 12px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            margin: 20px 0;
+        }
+
+        .progresso-item { height: 100%; transition: width 0.3s; }
+        .p-pago { background: var(--success); }
+        .p-pendente { background: var(--danger); }
+
+    </style>
 </head>
 
 <body>
 
-<header>
-Controle de Contas
-</header>
+<header>Controle Financeiro</header>
 
 <div class="mesControle">
-
-<button onclick="mesAnterior()">←</button>
-
-<div id="mesAtual"></div>
-
-<button onclick="mesProximo()">→</button>
-
+    <button onclick="mesAnterior()">←</button>
+    <div id="mesAtual"></div>
+    <button onclick="mesProximo()">→</button>
 </div>
 
 <div class="container">
 
-<div class="resumo">
+    <div class="card">
+        <h3>Resumo do Mês</h3>
+        <div class="resumo-valores">
+            <div class="valor-box">
+                <small>Salário</small>
+                <b id="salarioMostra">R$ 0,00</b>
+            </div>
+            <div class="valor-box">
+                <small>Extras</small>
+                <b id="extraMostra">R$ 0,00</b>
+            </div>
+        </div>
+        <div class="saldo-box">
+            <small>Saldo Disponível</small><br>
+            <b style="font-size: 24px;" id="saldo">R$ 0,00</b>
+        </div>
 
-<div>Salário: R$ <span id="salarioMostra">0</span></div>
-<div>Extras: R$ <span id="extraMostra">0</span></div>
-<div>Saldo: R$ <span id="saldo"></span></div>
+        <div class="barra-progresso">
+            <div id="barraPago" class="progresso-item p-pago"></div>
+            <div id="barraPendente" class="progresso-item p-pendente"></div>
+        </div>
+        <div style="display:flex; justify-content: space-between; font-size: 12px;">
+            <span style="color:var(--success)">● Pago: <span id="txtPago">R$ 0</span></span>
+            <span style="color:var(--danger)">● Pendente: <span id="txtPendente">R$ 0</span></span>
+        </div>
+    </div>
 
-</div>
+    <div class="card">
+        <h3>Configurar Renda</h3>
+        <input id="salario" type="number" step="0.01" placeholder="Salário (Ex: 2500,50)">
+        <input id="extra" type="number" step="0.01" placeholder="Valor extra">
+        <button onclick="salvarSalario()">Salvar Renda</button>
+    </div>
 
-<h3>Configurar Salário</h3>
+    <div class="card">
+        <h3>Adicionar Conta</h3>
+        <input id="nome" placeholder="Nome da conta (Ex: Aluguel)">
+        <input id="valor" type="number" step="0.01" placeholder="Valor (Ex: 450,00)">
+        <select id="tipo">
+            <option value="normal">Despesa Normal</option>
+            <option value="fixa">Despesa Fixa</option>
+        </select>
+        <button style="background: #333;" onclick="adicionarConta()">Adicionar Conta</button>
+    </div>
 
-<input id="salario" type="number" placeholder="Salário">
-
-<input id="extra" type="number" placeholder="Valor extra">
-
-<button onclick="salvarSalario()">Salvar</button>
-
-<hr>
-
-<h3>Adicionar Conta</h3>
-
-<input id="nome" placeholder="Nome da conta">
-
-<input id="valor" type="number" placeholder="Valor">
-
-<select id="tipo">
-<option value="normal">Normal</option>
-<option value="fixa">Fixa</option>
-</select>
-
-<button onclick="adicionarConta()">Adicionar</button>
-
-<hr>
-
-<h3>Contas</h3>
-
-<div id="lista"></div>
-
-<hr>
-
-<h3>Resumo</h3>
-
-<div id="barraPago" class="barra pago"></div>
-
-<div id="barraPendente" class="barra pendente"></div>
+    <div class="card">
+        <h3>Lista de Contas</h3>
+        <div id="lista"></div>
+    </div>
 
 </div>
 
 <script>
-
-let dados = JSON.parse(localStorage.getItem("dadosContas")) || {}
-
-let data = new Date()
-let mes = data.getMonth()
-let ano = data.getFullYear()
-
-function chaveMes(){
-
-return ano+"-"+mes
-
-}
-
-function atualizarMes(){
-
-mesAtual.innerText = (mes+1)+"/"+ano
-
-if(!dados[chaveMes()]){
-
-dados[chaveMes()]={
-
-salario:0,
-extra:0,
-contas:[]
-
-}
-
-}
-
-mostrar()
-
-}
-
-function mesAnterior(){
-
-mes--
-
-if(mes<0){
-
-mes=11
-ano--
-
-}
-
-atualizarMes()
-
-}
-
-function mesProximo(){
-
-mes++
-
-if(mes>11){
-
-mes=0
-ano++
-
-}
-
-atualizarMes()
-
-}
-
-function salvarSalario(){
-
-dados[chaveMes()].salario=Number(salario.value)
-
-dados[chaveMes()].extra=Number(extra.value)
-
-salvar()
-
-mostrar()
-
-}
-
-function adicionarConta(){
-
-let conta={
-
-nome:nome.value,
-valor:Number(valor.value),
-tipo:tipo.value,
-paga:false
-
-}
-
-dados[chaveMes()].contas.push(conta)
-
-salvar()
-
-mostrar()
-
-}
-
-function pagar(i){
-
-dados[chaveMes()].contas[i].paga=!dados[chaveMes()].contas[i].paga
-
-salvar()
-
-mostrar()
-
-}
-
-function remover(i){
-
-dados[chaveMes()].contas.splice(i,1)
-
-salvar()
-
-mostrar()
-
-}
-
-function mostrar(){
-
-let d = dados[chaveMes()]
-
-salarioMostra.innerText=d.salario
-
-extraMostra.innerText=d.extra
-
-lista.innerHTML=""
-
-let totalPago=0
-let totalPendente=0
-
-d.contas.forEach((c,i)=>{
-
-let div=document.createElement("div")
-
-div.className="conta"
-
-if(c.paga) div.classList.add("paga")
-
-div.innerHTML=`
-
-<div>
-
-<strong>${c.nome}</strong><br>
-
-R$ ${c.valor}
-
-</div>
-
-<div>
-
-<button onclick="pagar(${i})">✔</button>
-
-<button onclick="remover(${i})">🗑</button>
-
-</div>
-
-`
-
-lista.appendChild(div)
-
-if(c.paga){
-
-totalPago+=c.valor
-
-}else{
-
-totalPendente+=c.valor
-
-}
-
-})
-
-let saldo=(d.salario+d.extra)-(totalPago+totalPendente)
-
-saldo.innerText=saldo.toFixed(2)
-
-let total=totalPago+totalPendente
-
-let pPago=total?totalPago/total*100:0
-
-let pPendente=total?totalPendente/total*100:0
-
-barraPago.style.width=pPago+"%"
-
-barraPago.innerText="Pago R$ "+totalPago
-
-barraPendente.style.width=pPendente+"%"
-
-barraPendente.innerText="Pendente R$ "+totalPendente
-
-}
-
-function salvar(){
-
-localStorage.setItem("dadosContas",JSON.stringify(dados))
-
-}
-
-atualizarMes()
-
+    let dados = JSON.parse(localStorage.getItem("dadosContas")) || {}
+    let data = new Date()
+    let mes = data.getMonth()
+    let ano = data.getFullYear()
+
+    // Função para formatar números como moeda Real (R$)
+    function formatarMoeda(valor) {
+        return valor.toLocaleString('pt-br', { style: 'currency', currency: 'BRL' });
+    }
+
+    function chaveMes(){ return ano + "-" + mes }
+
+    function atualizarMes(){
+        mesAtual.innerText = (mes + 1).toString().padStart(2, '0') + "/" + ano
+        if(!dados[chaveMes()]){
+            dados[chaveMes()] = { salario: 0, extra: 0, contas: [] }
+        }
+        mostrar()
+    }
+
+    function mesAnterior(){
+        mes--; 
+        if(mes < 0){ mes = 11; ano--; }
+        atualizarMes()
+    }
+
+    function mesProximo(){
+        mes++;
+        if(mes > 11){ mes = 0; ano++; }
+        atualizarMes()
+    }
+
+    function salvarSalario(){
+        dados[chaveMes()].salario = Number(salario.value)
+        dados[chaveMes()].extra = Number(extra.value)
+        salvar(); mostrar()
+        salario.value = ""; extra.value = ""
+    }
+
+    function adicionarConta(){
+        if(!nome.value || !valor.value) return alert("Preencha nome e valor!")
+        let conta = {
+            nome: nome.value,
+            valor: Number(valor.value),
+            tipo: tipo.value,
+            paga: false
+        }
+        dados[chaveMes()].contas.push(conta)
+        salvar(); mostrar()
+        nome.value = ""; valor.value = ""
+    }
+
+    function pagar(i){
+        dados[chaveMes()].contas[i].paga = !dados[chaveMes()].contas[i].paga
+        salvar(); mostrar()
+    }
+
+    function remover(i){
+        if(confirm("Excluir esta conta?")){
+            dados[chaveMes()].contas.splice(i, 1)
+            salvar(); mostrar()
+        }
+    }
+
+    function mostrar(){
+        let d = dados[chaveMes()]
+        salarioMostra.innerText = formatarMoeda(d.salario)
+        extraMostra.innerText = formatarMoeda(d.extra)
+        lista.innerHTML = ""
+
+        let totalPago = 0
+        let totalPendente = 0
+
+        d.contas.forEach((c, i) => {
+            let div = document.createElement("div")
+            div.className = "conta " + (c.paga ? "paga" : "")
+            div.innerHTML = `
+                <div class="conta-info">
+                    <strong>${c.nome}</strong>
+                    <span>${formatarMoeda(c.valor)} • ${c.tipo}</span>
+                </div>
+                <div class="acoes">
+                    <button class="btn-check" onclick="pagar(${i})">✔</button>
+                    <button class="btn-del" onclick="remover(${i})">🗑</button>
+                </div>
+            `
+            lista.appendChild(div)
+            if(c.paga) totalPago += c.valor
+            else totalPendente += c.valor
+        })
+
+        let vSaldo = (d.salario + d.extra) - (totalPago + totalPendente)
+        saldo.innerText = formatarMoeda(vSaldo)
+        saldo.style.color = vSaldo < 0 ? "red" : "black"
+
+        let totalGeral = totalPago + totalPendente
+        let pPago = totalGeral ? (totalPago / totalGeral) * 100 : 0
+        let pPendente = totalGeral ? (totalPendente / totalGeral) * 100 : 0
+
+        barraPago.style.width = pPago + "%"
+        barraPendente.style.width = pPendente + "%"
+        txtPago.innerText = formatarMoeda(totalPago)
+        txtPendente.innerText = formatarMoeda(totalPendente)
+    }
+
+    function salvar(){
+        localStorage.setItem("dadosContas", JSON.stringify(dados))
+    }
+
+    atualizarMes()
 </script>
 
 </body>
