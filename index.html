@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Minhas Contas</title>
+
+<style>
+body{
+font-family:Arial;
+margin:0;
+background:#f2f2f2;
+}
+
+header{
+background:#1e88e5;
+color:white;
+padding:15px;
+text-align:center;
+font-size:20px;
+}
+
+.mesControle{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:10px;
+background:white;
+}
+
+button{
+padding:10px;
+border:none;
+border-radius:8px;
+background:#1e88e5;
+color:white;
+}
+
+.container{
+padding:15px;
+}
+
+input,select{
+width:100%;
+padding:10px;
+margin-top:5px;
+margin-bottom:10px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+.conta{
+background:white;
+padding:10px;
+margin-bottom:10px;
+border-radius:8px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.paga{
+text-decoration:line-through;
+color:gray;
+}
+
+.resumo{
+background:white;
+padding:10px;
+border-radius:8px;
+margin-bottom:10px;
+}
+
+.barra{
+height:25px;
+margin-bottom:10px;
+border-radius:5px;
+color:white;
+display:flex;
+align-items:center;
+padding-left:10px;
+}
+
+.pago{
+background:#4caf50;
+}
+
+.pendente{
+background:#f44336;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+Controle de Contas
+</header>
+
+<div class="mesControle">
+
+<button onclick="mesAnterior()">←</button>
+
+<div id="mesAtual"></div>
+
+<button onclick="mesProximo()">→</button>
+
+</div>
+
+<div class="container">
+
+<div class="resumo">
+
+<div>Salário: R$ <span id="salarioMostra">0</span></div>
+<div>Extras: R$ <span id="extraMostra">0</span></div>
+<div>Saldo: R$ <span id="saldo"></span></div>
+
+</div>
+
+<h3>Configurar Salário</h3>
+
+<input id="salario" type="number" placeholder="Salário">
+
+<input id="extra" type="number" placeholder="Valor extra">
+
+<button onclick="salvarSalario()">Salvar</button>
+
+<hr>
+
+<h3>Adicionar Conta</h3>
+
+<input id="nome" placeholder="Nome da conta">
+
+<input id="valor" type="number" placeholder="Valor">
+
+<select id="tipo">
+<option value="normal">Normal</option>
+<option value="fixa">Fixa</option>
+</select>
+
+<button onclick="adicionarConta()">Adicionar</button>
+
+<hr>
+
+<h3>Contas</h3>
+
+<div id="lista"></div>
+
+<hr>
+
+<h3>Resumo</h3>
+
+<div id="barraPago" class="barra pago"></div>
+
+<div id="barraPendente" class="barra pendente"></div>
+
+</div>
+
+<script>
+
+let dados = JSON.parse(localStorage.getItem("dadosContas")) || {}
+
+let data = new Date()
+let mes = data.getMonth()
+let ano = data.getFullYear()
+
+function chaveMes(){
+
+return ano+"-"+mes
+
+}
+
+function atualizarMes(){
+
+mesAtual.innerText = (mes+1)+"/"+ano
+
+if(!dados[chaveMes()]){
+
+dados[chaveMes()]={
+
+salario:0,
+extra:0,
+contas:[]
+
+}
+
+}
+
+mostrar()
+
+}
+
+function mesAnterior(){
+
+mes--
+
+if(mes<0){
+
+mes=11
+ano--
+
+}
+
+atualizarMes()
+
+}
+
+function mesProximo(){
+
+mes++
+
+if(mes>11){
+
+mes=0
+ano++
+
+}
+
+atualizarMes()
+
+}
+
+function salvarSalario(){
+
+dados[chaveMes()].salario=Number(salario.value)
+
+dados[chaveMes()].extra=Number(extra.value)
+
+salvar()
+
+mostrar()
+
+}
+
+function adicionarConta(){
+
+let conta={
+
+nome:nome.value,
+valor:Number(valor.value),
+tipo:tipo.value,
+paga:false
+
+}
+
+dados[chaveMes()].contas.push(conta)
+
+salvar()
+
+mostrar()
+
+}
+
+function pagar(i){
+
+dados[chaveMes()].contas[i].paga=!dados[chaveMes()].contas[i].paga
+
+salvar()
+
+mostrar()
+
+}
+
+function remover(i){
+
+dados[chaveMes()].contas.splice(i,1)
+
+salvar()
+
+mostrar()
+
+}
+
+function mostrar(){
+
+let d = dados[chaveMes()]
+
+salarioMostra.innerText=d.salario
+
+extraMostra.innerText=d.extra
+
+lista.innerHTML=""
+
+let totalPago=0
+let totalPendente=0
+
+d.contas.forEach((c,i)=>{
+
+let div=document.createElement("div")
+
+div.className="conta"
+
+if(c.paga) div.classList.add("paga")
+
+div.innerHTML=`
+
+<div>
+
+<strong>${c.nome}</strong><br>
+
+R$ ${c.valor}
+
+</div>
+
+<div>
+
+<button onclick="pagar(${i})">✔</button>
+
+<button onclick="remover(${i})">🗑</button>
+
+</div>
+
+`
+
+lista.appendChild(div)
+
+if(c.paga){
+
+totalPago+=c.valor
+
+}else{
+
+totalPendente+=c.valor
+
+}
+
+})
+
+let saldo=(d.salario+d.extra)-(totalPago+totalPendente)
+
+saldo.innerText=saldo.toFixed(2)
+
+let total=totalPago+totalPendente
+
+let pPago=total?totalPago/total*100:0
+
+let pPendente=total?totalPendente/total*100:0
+
+barraPago.style.width=pPago+"%"
+
+barraPago.innerText="Pago R$ "+totalPago
+
+barraPendente.style.width=pPendente+"%"
+
+barraPendente.innerText="Pendente R$ "+totalPendente
+
+}
+
+function salvar(){
+
+localStorage.setItem("dadosContas",JSON.stringify(dados))
+
+}
+
+atualizarMes()
+
+</script>
+
+</body>
+</html>
