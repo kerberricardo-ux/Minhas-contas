@@ -1,294 +1,311 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Controle de Contas PRO</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minhas Contas - Ricardo Kerber</title>
+    <style>
+        :root {
+            --primary: #1e88e5;
+            --secondary: #2e7d32;
+            --danger: #f44336;
+            --success: #4caf50;
+            --bg: #f8f9fa;
+        }
 
-<style>
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    background: #f4f6f9;
-}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background: var(--bg);
+            color: #333;
+        }
 
-header {
-    background: #1e88e5;
-    color: white;
-    padding: 15px;
-    text-align: center;
-    font-size: 20px;
-    font-weight: bold;
-}
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
 
-.mesControle {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
-    background: white;
-}
+        .mesControle {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
 
-.container {
-    max-width: 600px;
-    margin: auto;
-    padding: 15px;
-}
+        .container {
+            padding: 15px;
+            max-width: 500px;
+            margin: auto;
+        }
 
-button {
-    padding: 10px;
-    border: none;
-    border-radius: 8px;
-    background: #1e88e5;
-    color: white;
-    cursor: pointer;
-}
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
 
-button:hover { background: #1565c0; }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
 
-input, select {
-    width: 100%;
-    padding: 10px;
-    margin: 8px 0;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-}
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
 
-.card {
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 15px;
-}
+        button:active { transform: scale(0.98); }
 
-.conta {
-    background: white;
-    padding: 10px;
-    margin-bottom: 8px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-}
+        .conta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
 
-.conta.paga {
-    background: #e8f5e9;
-    text-decoration: line-through;
-    color: gray;
-}
+        .conta:last-child { border: none; }
 
-.saldo-positivo { color: green; }
-.saldo-negativo { color: red; }
+        .paga {
+            opacity: 0.5;
+            text-decoration: line-through;
+        }
 
-</style>
+        .tag {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: white;
+            text-transform: uppercase;
+            margin-left: 5px;
+        }
+
+        .tag-fixa { background: #673ab7; }
+        .tag-parcela { background: #ff9800; }
+
+        .barra-progresso {
+            width: 100%;
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progresso-valor {
+            height: 100%;
+            background: var(--success);
+            transition: width 0.5s ease;
+        }
+
+        .resumo-valores {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .saldo-box {
+            grid-column: span 2;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .positivo { background: #e8f5e9; color: var(--secondary); }
+        .negativo { background: #ffebee; color: var(--danger); }
+    </style>
 </head>
-
 <body>
 
-<header>💰 Controle de Contas</header>
+<header>Minhas Contas</header>
 
 <div class="mesControle">
-    <button onclick="App.mesAnterior()">←</button>
-    <div id="mesAtual"></div>
-    <button onclick="App.mesProximo()">→</button>
+    <button onclick="mudarMes(-1)">←</button>
+    <div id="mesAtual" style="font-size: 18px;"></div>
+    <button onclick="mudarMes(1)">→</button>
 </div>
 
 <div class="container">
-
-<div class="card">
-    <div>Salário: R$ <span id="salarioMostra">0</span></div>
-    <div>Extras: R$ <span id="extraMostra">0</span></div>
-    <div><strong>Saldo Real: R$ <span id="saldoReal">0</span></strong></div>
-</div>
-
-<div class="card">
-    <h3>Configurar</h3>
-    <input id="salario" type="number" placeholder="Salário">
-    <input id="extra" type="number" placeholder="Extra">
-    <button onclick="App.salvarSalario()">Salvar</button>
-</div>
-
-<div class="card">
-    <h3>Adicionar Conta</h3>
-    <input id="nome" placeholder="Nome da conta">
-    <input id="valor" type="number" placeholder="Valor">
-
-    <select id="tipo" onchange="App.toggleParcelas()">
-        <option value="normal">Normal</option>
-        <option value="parcelada">Parcelada</option>
-    </select>
-
-    <div id="parcelasDiv" style="display:none;">
-        <input id="parcelas" type="number" value="1">
+    <div class="card">
+        <div class="resumo-valores">
+            <div><small>Salário + Extras</small><br><strong id="rendaTotal">R$ 0,00</strong></div>
+            <div><small>Gasto Total</small><br><strong id="gastoTotal">R$ 0,00</strong></div>
+            <div id="saldoCard" class="saldo-box">
+                Saldo Atual: <span id="saldoMostra">R$ 0,00</span>
+            </div>
+        </div>
+        <div class="barra-progresso">
+            <div id="barraStatus" class="progresso-valor" style="width: 0%"></div>
+        </div>
     </div>
 
-    <button onclick="App.adicionarConta()">Adicionar</button>
-</div>
+    <div class="card">
+        <h3>Lançamentos</h3>
+        <input id="salario" type="number" placeholder="Salário Base">
+        <input id="extra" type="number" placeholder="Extras">
+        <button onclick="salvarRenda()" style="width: 100%; margin-bottom: 20px;">Atualizar Renda</button>
+        
+        <hr>
+        
+        <input id="nome" placeholder="Descrição (Ex: Aluguel)">
+        <input id="valor" type="number" placeholder="Valor R$">
+        <select id="tipo" onchange="document.getElementById('divParcelas').style.display = (this.value === 'parcelada' ? 'block' : 'none')">
+            <option value="normal">Gasto Único</option>
+            <option value="fixa">Conta Fixa</option>
+            <option value="parcelada">Parcelado</option>
+        </select>
+        
+        <div id="divParcelas" style="display: none;">
+            <input id="parcelas" type="number" placeholder="Nº de Parcelas" value="1">
+        </div>
+        <button onclick="adicionarConta()" style="width: 100%; background: var(--secondary);">Adicionar Conta</button>
+    </div>
 
-<div class="card">
-    <h3>Contas</h3>
-    <div id="lista"></div>
-</div>
-
+    <div class="card">
+        <h3>Lista de Contas</h3>
+        <div id="lista"></div>
+    </div>
 </div>
 
 <script>
-const App = {
+    let dados = JSON.parse(localStorage.getItem("dadosContas")) || {};
+    let hj = new Date();
+    let mes = hj.getMonth();
+    let ano = hj.getFullYear();
 
-    dados: JSON.parse(localStorage.getItem("contasPRO")) || {},
+    const formatar = (v) => v.toLocaleString('pt-br', { style: 'currency', currency: 'BRL' });
 
-    data: new Date(),
-    mes: new Date().getMonth(),
-    ano: new Date().getFullYear(),
+    function getChave(m, a) { return `${a}-${m}`; }
 
-    meses: ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"],
+    function mudarMes(delta) {
+        mes += delta;
+        if (mes < 0) { mes = 11; ano--; }
+        if (mes > 11) { mes = 0; ano++; }
+        render();
+    }
 
-    chave(m=this.mes, a=this.ano) {
-        return a + "-" + m;
-    },
+    function salvarRenda() {
+        const chave = getChave(mes, ano);
+        dados[chave].salario = Number(document.getElementById('salario').value);
+        dados[chave].extra = Number(document.getElementById('extra').value);
+        salvar();
+    }
 
-    getMes() {
-        if (!this.dados[this.chave()]) {
-            this.dados[this.chave()] = { salario:0, extra:0, contas:[] };
-        }
-        return this.dados[this.chave()];
-    },
+    function adicionarConta() {
+        const nome = document.getElementById('nome').value;
+        const valor = Number(document.getElementById('valor').value);
+        const tipo = document.getElementById('tipo').value;
+        const numParcelas = tipo === 'parcelada' ? Number(document.getElementById('parcelas').value) : 1;
 
-    init() {
-        this.atualizarMes();
-    },
+        if (!nome || !valor) return alert("Preencha os campos!");
 
-    atualizarMes() {
-        document.getElementById("mesAtual").innerText =
-            this.meses[this.mes] + " / " + this.ano;
-        this.render();
-    },
-
-    mesAnterior() {
-        this.mes--;
-        if(this.mes < 0){ this.mes=11; this.ano--; }
-        this.atualizarMes();
-    },
-
-    mesProximo() {
-        this.mes++;
-        if(this.mes > 11){ this.mes=0; this.ano++; }
-        this.atualizarMes();
-    },
-
-    salvar() {
-        localStorage.setItem("contasPRO", JSON.stringify(this.dados));
-    },
-
-    salvarSalario() {
-        const d = this.getMes();
-        d.salario = Number(document.getElementById("salario").value) || 0;
-        d.extra = Number(document.getElementById("extra").value) || 0;
-        this.salvar();
-        this.render();
-    },
-
-    toggleParcelas() {
-        document.getElementById("parcelasDiv").style.display =
-            document.getElementById("tipo").value === "parcelada" ? "block" : "none";
-    },
-
-    adicionarConta() {
-
-        const nome = document.getElementById("nome").value.trim();
-        const valor = Number(document.getElementById("valor").value);
-
-        if(!nome || valor <= 0){
-            alert("Preencha corretamente!");
-            return;
-        }
-
-        const tipo = document.getElementById("tipo").value;
-        const parcelas = tipo === "parcelada"
-            ? Number(document.getElementById("parcelas").value)
-            : 1;
-
-        let m = this.mes;
-        let a = this.ano;
-
-        for(let i=0;i<parcelas;i++){
-
-            const chave = this.chave(m,a);
-
-            if(!this.dados[chave]){
-                this.dados[chave] = { salario:0, extra:0, contas:[] };
-            }
-
-            this.dados[chave].contas.push({
-                nome: parcelas>1 ? `${nome} (${i+1}/${parcelas})` : nome,
-                valor: valor,
-                paga:false
+        for (let i = 0; i < numParcelas; i++) {
+            let m = mes + i, a = ano;
+            while (m > 11) { m -= 12; a++; }
+            
+            const chave = getChave(m, a);
+            if (!dados[chave]) dados[chave] = { salario: 0, extra: 0, contas: [] };
+            
+            dados[chave].contas.push({
+                id: Date.now() + Math.random(),
+                nome: tipo === 'parcelada' ? `${nome} (${i+1}/${numParcelas})` : nome,
+                valor, tipo, paga: false
             });
+        }
+        salvar();
+    }
 
-            m++;
-            if(m>11){ m=0; a++; }
+    function togglePagar(id) {
+        const chave = getChave(mes, ano);
+        const conta = dados[chave].contas.find(c => c.id === id);
+        if (conta) conta.paga = !conta.paga;
+        salvar();
+    }
+
+    function excluir(id) {
+        if (!confirm("Excluir conta?")) return;
+        const chave = getChave(mes, ano);
+        dados[chave].contas = dados[chave].contas.filter(c => c.id !== id);
+        salvar();
+    }
+
+    function salvar() {
+        localStorage.setItem("dadosContas", JSON.stringify(dados));
+        render();
+    }
+
+    function render() {
+        const chave = getChave(mes, ano);
+        const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        document.getElementById('mesAtual').innerText = `${mesesNomes[mes]} / ${ano}`;
+
+        if (!dados[chave]) {
+            // Tenta herdar o salário do mês anterior para facilitar
+            const chaveAnt = mes === 0 ? getChave(11, ano - 1) : getChave(mes - 1, ano);
+            const salAnt = dados[chaveAnt] ? dados[chaveAnt].salario : 0;
+            dados[chave] = { salario: salAnt, extra: 0, contas: [] };
         }
 
-        this.salvar();
-        this.render();
+        const d = dados[chave];
+        document.getElementById('salario').value = d.salario;
+        document.getElementById('extra').value = d.extra;
 
-        document.getElementById("nome").value="";
-        document.getElementById("valor").value="";
-    },
+        let pago = 0, pendente = 0;
+        const listaDiv = document.getElementById('lista');
+        listaDiv.innerHTML = "";
 
-    pagar(i){
-        const d = this.getMes();
-        d.contas[i].paga = !d.contas[i].paga;
-        this.salvar();
-        this.render();
-    },
-
-    remover(i){
-        if(confirm("Excluir conta?")){
-            this.getMes().contas.splice(i,1);
-            this.salvar();
-            this.render();
-        }
-    },
-
-    render(){
-
-        const d = this.getMes();
-
-        document.getElementById("salarioMostra").innerText = d.salario.toFixed(2);
-        document.getElementById("extraMostra").innerText = d.extra.toFixed(2);
-
-        let totalPago = 0;
-
-        const lista = document.getElementById("lista");
-        lista.innerHTML = "";
-
-        d.contas.forEach((c,i)=>{
-
-            const div = document.createElement("div");
-            div.className = "conta" + (c.paga ? " paga": "");
-
-            div.innerHTML = `
-                <div>${c.nome} - R$ ${c.valor.toFixed(2)}</div>
-                <div>
-                    <button onclick="App.pagar(${i})">✔</button>
-                    <button onclick="App.remover(${i})">🗑</button>
-                </div>
-            `;
-
-            lista.appendChild(div);
-
-            if(c.paga) totalPago += c.valor;
+        d.contas.forEach(c => {
+            if (c.paga) pago += c.valor; else pendente += c.valor;
+            
+            const tag = c.tipo !== 'normal' ? `<span class="tag tag-${c.tipo === 'fixa' ? 'fixa' : 'parcela'}">${c.tipo}</span>` : '';
+            
+            listaDiv.innerHTML += `
+                <div class="conta ${c.paga ? 'paga' : ''}">
+                    <div><strong>${c.nome}</strong> ${tag}<br><small>${formatar(c.valor)}</small></div>
+                    <div>
+                        <button onclick="togglePagar(${c.id})" style="background:var(--success)">✔</button>
+                        <button onclick="excluir(${c.id})" style="background:var(--danger)">🗑</button>
+                    </div>
+                </div>`;
         });
 
-        const saldo = (d.salario + d.extra) - totalPago;
-
-        const saldoEl = document.getElementById("saldoReal");
-        saldoEl.innerText = saldo.toFixed(2);
-        saldoEl.className = saldo >= 0 ? "saldo-positivo" : "saldo-negativo";
+        const totalRenda = d.salario + d.extra;
+        const saldo = totalRenda - (pago + pendente);
+        
+        document.getElementById('rendaTotal').innerText = formatar(totalRenda);
+        document.getElementById('gastoTotal').innerText = formatar(pago + pendente);
+        document.getElementById('saldoMostra').innerText = formatar(saldo);
+        
+        const card = document.getElementById('saldoCard');
+        card.className = `saldo-box ${saldo >= 0 ? 'positivo' : 'negativo'}`;
+        
+        const perc = totalRenda > 0 ? (pago / (pago + pendente)) * 100 : 0;
+        document.getElementById('barraStatus').style.width = (perc || 0) + "%";
     }
-};
 
-App.init();
+    render();
 </script>
-
 </body>
 </html>
