@@ -1,135 +1,169 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Controle Financeiro</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
-:root {
-    --primary: #1e88e5;
-    --secondary: #2e7d32;
-    --danger: #f44336;
-    --success: #4caf50;
-    --bg: #f4f7f6;
-}
-body { margin:0; font-family:Arial; background:var(--bg);}
-header { background:var(--primary); color:#fff; padding:15px; text-align:center;}
-
-.container { max-width:500px; margin:auto; padding:10px;}
-.card { background:#fff; padding:15px; border-radius:10px; margin-bottom:10px;}
-
-button { padding:10px; border:none; border-radius:6px; color:#fff; cursor:pointer;}
-input, select { width:100%; padding:10px; margin:5px 0;}
-
-.conta { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;}
-.paga { opacity:0.5; text-decoration:line-through;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minhas Contas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .card { border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .input-field { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-top: 5px; }
+    </style>
 </head>
+<body class="bg-gray-100 font-sans pb-10">
 
-<body>
+    <header class="bg-blue-600 text-white p-6 text-center shadow-lg">
+        <h1 class="text-2xl font-bold italic">Minhas Contas</h1>
+        <p class="text-sm opacity-80">Controle Financeiro Profissional</p>
+    </header>
 
-<header>Minhas Contas</header>
-
-<div class="container">
-
-<div class="card">
-<input id="nome" placeholder="Nome">
-<input id="valor" type="number" placeholder="Valor">
-<button onclick="adicionarConta()" style="background:green;width:100%">Adicionar</button>
-</div>
-
-<div class="card">
-<h3>Contas</h3>
-<div id="lista"></div>
-</div>
-
-</div>
-
-<script>
-
-// 🔥 LIMPA DADOS ANTIGOS (executa uma vez)
-if (!localStorage.getItem("limpezaFeita")) {
-    localStorage.removeItem("dadosContas");
-    localStorage.setItem("limpezaFeita", "true");
-}
-
-let dados = JSON.parse(localStorage.getItem("dadosContas")) || { contas: [] };
-
-// FORMATAÇÃO
-const formatar = v => v.toLocaleString('pt-br',{style:'currency',currency:'BRL'});
-
-// ADICIONAR
-function adicionarConta(){
-    const nome = document.getElementById('nome').value;
-    const valor = Number(document.getElementById('valor').value);
-
-    if(!nome || !valor){
-        alert("Preencha os campos");
-        return;
-    }
-
-    dados.contas.push({
-        id: Date.now().toString(),
-        nome,
-        valor,
-        paga:false
-    });
-
-    salvar();
-}
-
-// PAGAR
-function togglePagar(id){
-    const conta = dados.contas.find(c => c.id === id);
-    if(conta){
-        conta.paga = !conta.paga;
-        salvar();
-    }
-}
-
-// EXCLUIR
-function excluir(id){
-    if(!confirm("Deseja excluir?")) return;
-
-    dados.contas = dados.contas.filter(c => c.id !== id);
-    salvar();
-}
-
-// SALVAR
-function salvar(){
-    localStorage.setItem("dadosContas", JSON.stringify(dados));
-    render();
-}
-
-// RENDER
-function render(){
-    const lista = document.getElementById('lista');
-    lista.innerHTML = "";
-
-    if(!dados.contas || dados.contas.length === 0){
-        lista.innerHTML = "<p>Nenhuma conta cadastrada</p>";
-        return;
-    }
-
-    dados.contas.forEach(c=>{
-        lista.innerHTML += `
-        <div class="conta ${c.paga ? 'paga':''}">
+    <div class="max-w-md mx-auto p-4">
+        
+        <div class="bg-white p-6 mb-6 card flex justify-between items-center">
             <div>
-                <strong>${c.nome}</strong><br>
-                ${formatar(c.valor)}
+                <p class="text-gray-500 text-sm">Saldo Total</p>
+                <h2 id="total-geral" class="text-2xl font-bold text-green-600">R$ 0,00</h2>
             </div>
-            <div>
-                <button onclick="togglePagar('${c.id}')" style="background:green">✔</button>
-                <button onclick="excluir('${c.id}')" style="background:red">🗑</button>
+            <div class="text-right">
+                <p class="text-gray-500 text-sm font-medium">Contas Ativas</p>
+                <span id="contagem-contas" class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded">0</span>
             </div>
-        </div>`;
-    });
-}
+        </div>
 
-render();
+        <div class="bg-white p-6 mb-6 card">
+            <h3 class="font-bold mb-4 text-gray-700 border-b pb-2 text-lg">Nova Conta</h3>
+            
+            <label class="block mb-3">
+                <span class="text-gray-600 text-sm font-semibold">Descrição</span>
+                <input type="text" id="desc" class="input-field" placeholder="Ex: Supermercado">
+            </label>
 
-</script>
+            <div class="grid grid-cols-2 gap-4 mb-3">
+                <label>
+                    <span class="text-gray-600 text-sm font-semibold">Valor (R$)</span>
+                    <input type="number" id="valor" class="input-field" step="0.01" placeholder="0,00">
+                </label>
+                <label>
+                    <span class="text-gray-600 text-sm font-semibold">Vencimento</span>
+                    <input type="date" id="data" class="input-field">
+                </label>
+            </div>
+
+            <label class="block mb-4">
+                <span class="text-gray-600 text-sm font-semibold">Parcelas (1 = à vista)</span>
+                <input type="number" id="parcelas" class="input-field" value="1" min="1">
+            </label>
+
+            <button onclick="adicionarConta()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
+                Registrar Conta
+            </button>
+        </div>
+
+        <div class="space-y-4" id="lista-contas">
+            </div>
+    </div>
+
+    <script>
+        let contas = JSON.parse(localStorage.getItem('minhas_contas')) || [];
+
+        function adicionarConta() {
+            const desc = document.getElementById('desc').value;
+            const valor = parseFloat(document.getElementById('valor').value);
+            const data = document.getElementById('data').value;
+            const numParcelas = parseInt(document.getElementById('parcelas').value);
+
+            if (!desc || isNaN(valor) || !data) {
+                alert("Por favor, preencha todos os campos!");
+                return;
+            }
+
+            // Lógica de Parcelamento
+            for (let i = 0; i < numParcelas; i++) {
+                const dataVenc = new Date(data);
+                dataVenc.setMonth(dataVenc.getMonth() + i);
+
+                const novaConta = {
+                    id: Date.now() + i,
+                    desc: numParcelas > 1 ? `${desc} (${i + 1}/${numParcelas})` : desc,
+                    valor: (valor / numParcelas).toFixed(2),
+                    vencimento: dataVenc.toISOString().split('T')[0],
+                    paga: false
+                };
+                contas.push(novaConta);
+            }
+
+            salvarDados();
+            limparForm();
+            renderizar();
+        }
+
+        function togglePaga(id) {
+            contas = contas.map(c => c.id === id ? { ...c, paga: !c.paga } : c);
+            salvarDados();
+            renderizar();
+        }
+
+        function removerConta(id) {
+            if(confirm("Deseja excluir este registro?")) {
+                contas = contas.filter(c => c.id !== id);
+                salvarDados();
+                renderizar();
+            }
+        }
+
+        function salvarDados() {
+            localStorage.setItem('minhas_contas', JSON.stringify(contas));
+        }
+
+        function limparForm() {
+            document.getElementById('desc').value = '';
+            document.getElementById('valor').value = '';
+            document.getElementById('parcelas').value = '1';
+        }
+
+        function formatarMoeda(valor) {
+            return parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function renderizar() {
+            const lista = document.getElementById('lista-contas');
+            const totalGeral = document.getElementById('total-geral');
+            const contagem = document.getElementById('contagem-contas');
+            
+            lista.innerHTML = '';
+            let soma = 0;
+
+            // Ordenar por data
+            contas.sort((a, b) => new Date(a.vencimento) - new Date(b.vencimento));
+
+            contas.forEach(c => {
+                if (!c.paga) soma += parseFloat(c.valor);
+
+                const div = document.createElement('div');
+                div.className = `p-4 bg-white card border-l-4 ${c.paga ? 'border-gray-400 opacity-60' : 'border-red-500'}`;
+                
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div onclick="togglePaga(${c.id})" class="cursor-pointer flex-1">
+                            <h4 class="font-bold ${c.paga ? 'line-through' : ''}">${c.desc}</h4>
+                            <p class="text-sm text-gray-500">${c.vencimento.split('-').reverse().join('/')}</p>
+                            <p class="text-blue-600 font-semibold">${formatarMoeda(c.valor)}</p>
+                        </div>
+                        <button onclick="removerConta(${c.id})" class="text-red-400 hover:text-red-600 px-2">
+                            ✕
+                        </button>
+                    </div>
+                `;
+                lista.appendChild(div);
+            });
+
+            totalGeral.innerText = formatarMoeda(soma);
+            totalGeral.className = soma > 0 ? "text-2xl font-bold text-red-600" : "text-2xl font-bold text-green-600";
+            contagem.innerText = contas.filter(c => !c.paga).length;
+        }
+
+        // Inicializar app
+        renderizar();
+    </script>
 </body>
 </html>
