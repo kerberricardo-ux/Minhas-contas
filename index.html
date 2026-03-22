@@ -1,183 +1,272 @@
-<main class="max-w-md mx-auto px-4 -mt-8">
-        <div class="mes-nav">
-            <button onclick="mudarMes(-1)" class="p-2 hover:bg-gray-100 rounded-full">❮</button>
-            <span id="mes-atual" class="font-bold text-gray-700 text-sm sm:text-lg uppercase">Janeiro 2026</span>
-            <button onclick="mudarMes(1)" class="p-2 hover:bg-gray-100 rounded-full">❯</button>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uniforme Control Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --android-blue: #0561db; }
+        body { background-color: #f0f2f5; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .app-card { background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.2s; border: 1px solid #e5e7eb; }
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .btn-float { position: fixed; bottom: 24px; right: 24px; width: 64px; height: 64px; border-radius: 32px; background: var(--android-blue); color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(5,97,219,0.4); z-index: 50; border: none; cursor: pointer; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px); }
+        .modal.active { display: flex; }
+        .hidden-canvas { position: absolute; left: -9999px; top: 0; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="pb-24">
+
+    <header class="bg-blue-800 text-white p-5 shadow-lg sticky top-0 z-40">
+        <div class="flex justify-between items-center max-w-2xl mx-auto">
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">Uniforme Control</h1>
+                <p class="text-[10px] opacity-80 uppercase font-medium">Módulo Operacional</p>
+            </div>
+            <button onclick="toggleHistorico()" id="btn-hist" class="bg-blue-700 px-4 py-2 rounded-xl text-xs font-bold border border-blue-400 active:scale-95 transition">
+                VER HISTÓRICO
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto p-4">
+        <div class="grid grid-cols-3 gap-3 mb-6 text-center">
+            <div class="bg-white p-3 rounded-2xl shadow-sm border-b-4 border-orange-500">
+                <p class="text-[9px] text-gray-400 font-black uppercase">Novos</p>
+                <p id="count-abertos" class="text-xl font-black text-gray-700">0</p>
+            </div>
+            <div class="bg-white p-3 rounded-2xl shadow-sm border-b-4 border-green-500">
+                <p class="text-[9px] text-gray-400 font-black uppercase">Prontos</p>
+                <p id="count-prontos" class="text-xl font-black text-gray-700">0</p>
+            </div>
+            <div class="bg-white p-3 rounded-2xl shadow-sm border-b-4 border-gray-300">
+                <p class="text-[9px] text-gray-400 font-black uppercase">Total</p>
+                <p id="count-total" class="text-xl font-black text-gray-700">0</p>
+            </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 mb-6 text-center">
-            <div class="bg-green-50 p-3 rounded-2xl border border-green-100">
-                <p class="text-[10px] uppercase text-green-600 font-bold">Total Entradas</p>
-                <p id="resumo-entradas" class="font-bold text-green-700">R$ 0,00</p>
-            </div>
-            <div class="bg-red-50 p-3 rounded-2xl border border-red-100">
-                <p class="text-[10px] uppercase text-red-600 font-bold">Total Saídas</p>
-                <p id="resumo-saidas" class="font-bold text-red-700">R$ 0,00</p>
-            </div>
-        </div>
-
-        <div id="lista-contas" class="space-y-3">
+        <h2 id="titulo-lista" class="text-xs font-black text-gray-400 mb-4 uppercase tracking-widest">Solicitações Ativas</h2>
+        
+        <div id="lista-pedidos" class="space-y-4">
             </div>
     </main>
 
+    <button class="btn-float shadow-2xl" onclick="abrirModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+    </button>
+
+    <div id="modal-cadastro" class="modal">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 overflow-y-auto max-h-[90vh] shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black text-gray-800">Nova Solicitação</h3>
+                <button onclick="fecharModal()" class="text-gray-400 text-2xl">&times;</button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="group">
+                    <label class="text-[10px] font-bold text-blue-600 uppercase ml-1">Dados do Colaborador</label>
+                    <input type="text" id="nome" placeholder="Nome Completo" class="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="matricula" placeholder="Matrícula" class="p-4 bg-gray-50 border-none rounded-2xl outline-none">
+                    <input type="text" id="posto" placeholder="Posto / Unidade" class="p-4 bg-gray-50 border-none rounded-2xl outline-none">
+                </div>
+
+                <div class="group">
+                    <label class="text-[10px] font-bold text-blue-600 uppercase ml-1">Itens e Tamanhos</label>
+                    <textarea id="itens" placeholder="Ex: 02 Calças (G), 01 Bota (42)..." class="w-full p-4 bg-gray-50 border-none rounded-2xl h-28 outline-none resize-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="motivo" placeholder="Motivo" class="p-4 bg-gray-50 border-none rounded-2xl outline-none">
+                    <input type="text" id="solicitante" placeholder="Responsável" class="p-4 bg-gray-50 border-none rounded-2xl outline-none">
+                </div>
+            </div>
+
+            <button onclick="registrarPedido()" class="w-full py-4 bg-blue-700 text-white rounded-2xl font-black mt-8 shadow-lg active:scale-95 transition uppercase tracking-widest">
+                Finalizar Pedido
+            </button>
+        </div>
+    </div>
+
+    <div id="comprovante-template" class="hidden-canvas bg-white p-10 w-[600px] border">
+        <div style="border: 4px solid #0561db; padding: 30px; border-radius: 20px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="color: #0561db; font-size: 28px; font-weight: 900; margin: 0;">SOLICITAÇÃO DE UNIFORME</h1>
+                <p style="color: #666; font-size: 14px;">Protocolo Digital: <span id="print-id" style="font-weight: bold;"></span></p>
+            </div>
+            <hr style="border: 1px solid #eee;">
+            <div style="margin: 30px 0; font-size: 18px; line-height: 1.8; color: #333;">
+                <p><strong>COLABORADOR:</strong> <span id="print-nome"></span></p>
+                <p><strong>MATRÍCULA:</strong> <span id="print-mat"></span> | <strong>POSTO:</strong> <span id="print-posto"></span></p>
+                <p><strong>ITENS SOLICITADOS:</strong><br><span id="print-itens" style="background: #f9f9f9; display: block; padding: 10px; border-radius: 10px;"></span></p>
+                <p><strong>MOTIVO:</strong> <span id="print-motivo"></span></p>
+                <p><strong>SOLICITANTE:</strong> <span id="print-sol"></span></p>
+                <p><strong>DATA/HORA:</strong> <span id="print-data"></span></p>
+            </div>
+            <div id="print-status" style="text-align: center; padding: 15px; background: #0561db; color: white; font-weight: 900; border-radius: 10px; font-size: 20px;"></div>
+        </div>
+    </div>
+
     <script>
-        let dataAtual = new Date();
-        let database = JSON.parse(localStorage.getItem('db_financeiro_pro')) || { itens: [] };
+        // Configurações de Fluxo
+        const STATUS_FLOW = ["Solicitado", "Em análise", "Separando", "Pronto", "Entregue"];
+        const STATUS_COLORS = {
+            "Solicitado": "bg-orange-100 text-orange-700",
+            "Em análise": "bg-blue-100 text-blue-700",
+            "Separando": "bg-purple-100 text-purple-700",
+            "Pronto": "bg-green-100 text-green-700",
+            "Entregue": "bg-gray-200 text-gray-700"
+        };
 
-        function mudarMes(direcao) {
-            dataAtual.setMonth(dataAtual.getMonth() + direcao);
-            renderizar();
-        }
+        let pedidos = JSON.parse(localStorage.getItem('db_uniformes_v2')) || [];
+        let modoHistorico = false;
 
-        function toggleParcelas() {
-            const tipo = document.getElementById('input-recorrencia').value;
-            document.getElementById('group-parcelas').classList.toggle('hidden', tipo !== 'parcelada');
-        }
+        function registrarPedido() {
+            const campos = ['nome', 'matricula', 'posto', 'itens', 'motivo', 'solicitante'];
+            const data = {};
+            campos.forEach(c => data[c] = document.getElementById(c).value);
 
-        function abrirModal() {
-            document.getElementById('modal-conta').classList.add('active');
-        }
+            if(!data.nome || !data.itens) return alert("Por favor, preencha o Nome e os Itens.");
 
-        function fecharModal() {
-            document.getElementById('modal-conta').classList.remove('active');
+            const novo = {
+                ...data,
+                id: "UNF-" + Math.floor(1000 + Math.random() * 9000),
+                status: "Solicitado",
+                timestamp: new Date().toLocaleString('pt-BR')
+            };
+
+            pedidos.unshift(novo);
+            salvar();
+            fecharModal();
             limparCampos();
         }
 
-        function salvarItem() {
-            const nome = document.getElementById('input-nome').value;
-            const valor = parseFloat(document.getElementById('input-valor').value);
-            const tipo = document.getElementById('input-tipo').value;
-            const recorrencia = document.getElementById('input-recorrencia').value;
-            const numParcelas = parseInt(document.getElementById('input-num-parcelas').value);
-
-            if (!nome || isNaN(valor)) return alert("Preencha os campos corretamente.");
-
-            const mesRef = dataAtual.getMonth();
-            const anoRef = dataAtual.getFullYear();
-
-            // Se for Renda, ignoramos parcelamento para simplificar (geralmente é fixo ou único)
-            if (recorrencia === 'parcelada' && tipo === 'despesa') {
-                const valorParcela = valor / numParcelas;
-                for (let i = 0; i < numParcelas; i++) {
-                    let d = new Date(anoRef, mesRef + i, 1);
-                    database.itens.push({
-                        id: Date.now() + i,
-                        nome: `${nome} (${i+1}/${numParcelas})`,
-                        valor: valorParcela,
-                        tipo,
-                        mes: d.getMonth(),
-                        ano: d.getFullYear(),
-                        paga: false,
-                        recorrencia: 'parcelada'
-                    });
-                }
-            } else {
-                database.itens.push({
-                    id: Date.now(),
-                    nome,
-                    valor,
-                    tipo,
-                    mes: mesRef,
-                    ano: anoRef,
-                    paga: tipo === 'renda', // Renda já nasce "paga/recebida"
-                    recorrencia
-                });
-            }
-
-            salvarDB();
-            fecharModal();
-            renderizar();
-        }
-
-        function toggleStatus(id) {
-            const item = database.itens.find(i => i.id === id);
-            if (item && item.tipo === 'despesa') item.paga = !item.paga;
-            salvarDB();
-            renderizar();
-        }
-
-        function excluirItem(id) {
-            if (confirm("Excluir este registro?")) {
-                database.itens = database.itens.filter(i => i.id !== id);
-                salvarDB();
-                renderizar();
+        function mudarStatus(id) {
+            const idx = pedidos.findIndex(p => p.id === id);
+            const atualIdx = STATUS_FLOW.indexOf(pedidos[idx].status);
+            
+            if (atualIdx < STATUS_FLOW.length - 1) {
+                pedidos[idx].status = STATUS_FLOW[atualIdx + 1];
+                salvar();
             }
         }
 
-        function salvarDB() {
-            localStorage.setItem('db_financeiro_pro', JSON.stringify(database));
+        function toggleHistorico() {
+            modoHistorico = !modoHistorico;
+            const btn = document.getElementById('btn-hist');
+            const titulo = document.getElementById('titulo-lista');
+            
+            btn.innerText = modoHistorico ? "VOLTAR" : "VER HISTÓRICO";
+            titulo.innerText = modoHistorico ? "Histórico (Entregues)" : "Solicitações Ativas";
+            renderizar();
+        }
+
+        async function baixarComprovante(id) {
+            const p = pedidos.find(x => x.id === id);
+            document.getElementById('print-id').innerText = p.id;
+            document.getElementById('print-nome').innerText = p.nome;
+            document.getElementById('print-mat').innerText = p.matricula;
+            document.getElementById('print-posto').innerText = p.posto;
+            document.getElementById('print-itens').innerText = p.itens;
+            document.getElementById('print-motivo').innerText = p.motivo;
+            document.getElementById('print-sol').innerText = p.solicitante;
+            document.getElementById('print-data').innerText = p.timestamp;
+            document.getElementById('print-status').innerText = p.status.toUpperCase();
+
+            const area = document.getElementById('comprovante-template');
+            area.classList.remove('hidden-canvas');
+            
+            const canvas = await html2canvas(area, { scale: 2 });
+            const link = document.createElement('a');
+            link.download = `Uniforme_${p.nome}_${p.id}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            
+            area.classList.add('hidden-canvas');
+        }
+
+        function zap(id) {
+            const p = pedidos.find(x => x.id === id);
+            const texto = `*SOLICITAÇÃO DE UNIFORME*\n\n` +
+                          `🆔 *ID:* ${p.id}\n` +
+                          `👤 *Colaborador:* ${p.nome}\n` +
+                          `📍 *Posto:* ${p.posto}\n` +
+                          `📦 *Itens:* ${p.itens}\n` +
+                          `🕒 *Status:* _${p.status.toUpperCase()}_\n\n` +
+                          `✍️ *Solicitante:* ${p.solicitante}`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`);
+        }
+
+        function excluir(id) {
+            if(confirm("Deseja realmente excluir este registro permanentemente?")) {
+                pedidos = pedidos.filter(p => p.id !== id);
+                salvar();
+            }
+        }
+
+        function salvar() {
+            localStorage.setItem('db_uniformes_v2', JSON.stringify(pedidos));
+            renderizar();
         }
 
         function renderizar() {
-            const container = document.getElementById('lista-contas');
-            const mesRef = dataAtual.getMonth();
-            const anoRef = dataAtual.getFullYear();
+            const lista = document.getElementById('lista-pedidos');
+            lista.innerHTML = '';
             
-            document.getElementById('mes-atual').innerText = dataAtual.toLocaleString('pt-br', { month: 'long', year: 'numeric' });
+            const filtrados = pedidos.filter(p => modoHistorico ? p.status === "Entregue" : p.status !== "Entregue");
 
-            container.innerHTML = '';
-            let totalRenda = 0;
-            let totalDespesa = 0;
-            let totalPago = 0;
+            if(filtrados.length === 0) {
+                lista.innerHTML = `<p class="text-center text-gray-400 py-10 text-sm italic">Nenhuma solicitação encontrada.</p>`;
+            }
 
-            const itensMes = database.itens.filter(i => {
-                if (i.recorrencia === 'fixa') return true; 
-                return i.mes === mesRef && i.ano === anoRef;
-            });
-
-            itensMes.forEach(item => {
-                if (item.tipo === 'renda') totalRenda += item.valor;
-                else {
-                    totalDespesa += item.valor;
-                    if (item.paga) totalPago += item.valor;
-                }
-
+            filtrados.forEach(p => {
                 const card = document.createElement('div');
-                // Estilo diferente para Renda (Azul) e Despesa (Vermelho/Verde)
-                const isRenda = item.tipo === 'renda';
-                
-                card.className = `app-card flex justify-between items-center border-l-4 ${
-                    isRenda ? 'border-blue-500 bg-blue-50' : (item.paga ? 'border-green-500 opacity-75' : 'border-red-500')
-                }`;
-
+                card.className = 'app-card p-5 animate-in fade-in duration-300';
                 card.innerHTML = `
-                    <div onclick="${isRenda ? '' : `toggleStatus(${item.id})`}" class="flex-1 cursor-pointer">
-                        <div class="flex items-center gap-2">
-                            <span class="text-lg">${isRenda ? '💰' : '💸'}</span>
-                            <h4 class="font-bold text-gray-800 ${!isRenda && item.paga ? 'line-through text-gray-400' : ''}">${item.nome}</h4>
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter">${p.id} • ${p.timestamp}</span>
+                            <h3 class="text-lg font-black text-gray-800 leading-tight">${p.nome}</h3>
+                            <p class="text-xs font-bold text-gray-500 uppercase">${p.posto}</p>
                         </div>
-                        <p class="text-[10px] text-gray-500 ml-7 uppercase">${item.recorrencia}</p>
+                        <span class="status-badge ${STATUS_COLORS[p.status]} shadow-sm">${p.status}</span>
                     </div>
-                    <div class="text-right">
-                        <p class="font-bold ${isRenda ? 'text-blue-600' : (item.paga ? 'text-green-600' : 'text-red-500')}">
-                            ${isRenda ? '+' : '-'} R$ ${item.valor.toFixed(2)}
-                        </p>
-                        <button onclick="excluirItem(${item.id})" class="text-[10px] text-gray-400 hover:text-red-500">Excluir</button>
+                    
+                    <div class="bg-blue-50 p-3 rounded-xl mb-4 border border-blue-100">
+                        <p class="text-[10px] text-blue-400 font-bold uppercase mb-1">Itens Solicitados</p>
+                        <p class="text-sm text-blue-900 font-medium whitespace-pre-line">${p.itens}</p>
+                    </div>
+
+                    <div class="flex gap-2">
+                        ${p.status !== 'Entregue' ? `<button onclick="mudarStatus('${p.id}')" class="bg-blue-600 text-white text-[10px] px-4 py-3 rounded-xl font-black uppercase flex-1 shadow-md active:bg-blue-800">Avançar</button>` : ''}
+                        <button onclick="baixarComprovante('${p.id}')" class="bg-white border border-gray-200 text-gray-600 text-[10px] px-3 py-3 rounded-xl font-black uppercase shadow-sm active:bg-gray-100">📷 Print</button>
+                        <button onclick="zap('${p.id}')" class="bg-green-500 text-white text-[10px] px-3 py-3 rounded-xl font-black uppercase shadow-sm active:bg-green-700">Zap</button>
+                        <button onclick="excluir('${p.id}')" class="text-gray-300 px-2 hover:text-red-500">✕</button>
                     </div>
                 `;
-                container.appendChild(card);
+                lista.appendChild(card);
             });
 
-            // Atualização dos Painéis
-            const saldoFinal = totalRenda - totalDespesa;
-            document.getElementById('display-renda').innerText = `R$ ${totalRenda.toFixed(2)}`;
-            document.getElementById('resumo-entradas').innerText = `R$ ${totalRenda.toFixed(2)}`;
-            document.getElementById('resumo-saidas').innerText = `R$ ${totalDespesa.toFixed(2)}`;
-            
-            const displaySaldo = document.getElementById('display-saldo');
-            displaySaldo.innerText = `R$ ${saldoFinal.toFixed(2)}`;
-            
-            // Lógica de Cores do Saldo
-            displaySaldo.className = saldoFinal < 0 ? "text-2xl font-bold text-red-300" : "text-2xl font-bold text-green-300";
+            // Dash Stats
+            document.getElementById('count-abertos').innerText = pedidos.filter(p => p.status === "Solicitado").length;
+            document.getElementById('count-prontos').innerText = pedidos.filter(p => p.status === "Pronto").length;
+            document.getElementById('count-total').innerText = pedidos.length;
         }
 
-        function limparCampos() {
-            document.getElementById('input-nome').value = '';
-            document.getElementById('input-valor').value = '';
-            document.getElementById('input-tipo').value = 'despesa';
-            document.getElementById('input-recorrencia').value = 'unica';
-            document.getElementById('group-parcelas').classList.add('hidden');
+        function abrirModal() { document.getElementById('modal-cadastro').classList.add('active'); }
+        function fecharModal() { document.getElementById('modal-cadastro').classList.remove('active'); }
+        function limparCampos() { 
+            ['nome','matricula','posto','itens','motivo','solicitante'].forEach(id => document.getElementById(id).value = '');
         }
 
         renderizar();
     </script>
+</body>
+</html>
