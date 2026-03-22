@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minhas Contas Pro - Ricardo Kerber</title>
+    <title>Controle Financeiro - Ricardo Kerber</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -14,16 +14,16 @@
             --bg: #f4f7f6;
         }
 
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: #333; }
-        header { background: var(--primary); color: white; padding: 20px; text-align: center; font-size: 22px; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: var(--bg); color: #333; }
+        header { background: var(--primary); color: white; padding: 20px; text-align: center; font-size: 22px; font-weight: bold; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
 
-        .mesControle { display: flex; justify-content: space-around; align-items: center; padding: 15px; background: white; border-bottom: 1px solid #ddd; }
-        .container { padding: 15px; max-width: 600px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .mesControle { display: flex; justify-content: space-around; align-items: center; padding: 15px; background: white; margin-bottom: 10px; border-bottom: 1px solid #ddd; }
+        .container { padding: 15px; max-width: 500px; margin: auto; }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
 
         input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; }
-        button { padding: 12px; border: none; border-radius: 8px; background: var(--primary); color: white; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        button:active { transform: scale(0.95); }
+        button { padding: 12px; border: none; border-radius: 8px; background: var(--primary); color: white; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:active { transform: scale(0.98); }
 
         .conta { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
         .paga { opacity: 0.5; text-decoration: line-through; }
@@ -33,12 +33,12 @@
         .tag-parcelada { background: #ff9800; }
         .tag-normal { background: #9e9e9e; }
 
-        .resumo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center; margin-bottom: 15px; }
-        .saldo-box { grid-column: span 2; padding: 10px; border-radius: 8px; font-weight: bold; }
+        .resumo-valores { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center; }
+        .saldo-box { grid-column: span 2; padding: 10px; border-radius: 8px; margin-top: 10px; font-weight: bold; }
         .positivo { background: #e8f5e9; color: var(--secondary); }
         .negativo { background: #ffebee; color: var(--danger); }
-
-        canvas { max-width: 100%; margin-top: 10px; }
+        
+        canvas { max-width: 100%; margin: 15px 0; }
     </style>
 </head>
 <body>
@@ -53,19 +53,19 @@
 
 <div class="container">
     <div class="card">
-        <div class="resumo-grid">
+        <div class="resumo-valores">
             <div><small>Renda Total</small><br><strong id="rendaTotal">R$ 0,00</strong></div>
             <div><small>Gasto Total</small><br><strong id="gastoTotal">R$ 0,00</strong></div>
-            <div id="saldoCard" class="saldo-box">Saldo: <span id="saldoMostra">R$ 0,00</span></div>
+            <div id="saldoCard" class="saldo-box">Saldo Atual: <span id="saldoMostra">R$ 0,00</span></div>
         </div>
-        <canvas id="meuGrafico"></canvas>
+        <canvas id="graficoGastos"></canvas>
     </div>
 
     <div class="card">
-        <h3>Novo Lançamento</h3>
+        <h3>Lançamentos</h3>
         <input id="salario" type="number" placeholder="Salário Base">
         <input id="extra" type="number" placeholder="Extras">
-        <button onclick="salvarRenda()" style="width: 100%; margin-bottom: 15px;">Atualizar Renda</button>
+        <button onclick="salvarRenda()" style="width: 100%; margin-bottom: 20px;">Atualizar Renda</button>
         <hr>
         <input id="nome" placeholder="Descrição (Ex: Aluguel)">
         <input id="valor" type="number" placeholder="Valor R$">
@@ -74,7 +74,9 @@
             <option value="fixa">Conta Fixa</option>
             <option value="parcelada">Parcelado</option>
         </select>
-        <div id="divParcelas" style="display: none;"><input id="parcelas" type="number" placeholder="Nº de Parcelas" value="1"></div>
+        <div id="divParcelas" style="display: none;">
+            <input id="parcelas" type="number" placeholder="Nº de Parcelas" value="1">
+        </div>
         <button onclick="adicionarConta()" style="width: 100%; background: var(--secondary);">Adicionar Conta</button>
     </div>
 
@@ -89,7 +91,7 @@
     let hj = new Date();
     let mes = hj.getMonth();
     let ano = hj.getFullYear();
-    let meuGrafico = null;
+    let chartInstance = null;
 
     const formatar = (v) => v.toLocaleString('pt-br', { style: 'currency', currency: 'BRL' });
     const getChave = (m, a) => `${a}-${m}`;
@@ -113,7 +115,11 @@
                 const fixas = dados[chaveAnt].contas.filter(c => c.tipo === 'fixa');
                 dados[chaveAtual] = { salario: dados[chaveAnt].salario, extra: 0, contas: [] };
                 fixas.forEach(f => {
-                    dados[chaveAtual].contas.push({ ...f, id: String(Date.now() + Math.random()), paga: false });
+                    dados[chaveAtual].contas.push({ 
+                        ...f, 
+                        id: String(Date.now() + Math.random()), 
+                        paga: false 
+                    });
                 });
                 salvar();
             }
@@ -134,15 +140,16 @@
         const tipo = document.getElementById('tipo').value;
         const numParcelas = tipo === 'parcelada' ? Number(document.getElementById('parcelas').value) : 1;
 
-        if (!nome || !valor) return alert("Preencha descrição e valor!");
+        if (!nome || !valor) return alert("Preencha os campos!");
 
         for (let i = 0; i < numParcelas; i++) {
             let m = mes + i, a = ano;
             while (m > 11) { m -= 12; a++; }
             const chave = getChave(m, a);
             if (!dados[chave]) dados[chave] = { salario: 0, extra: 0, contas: [] };
+            
             dados[chave].contas.push({
-                id: String(Date.now() + Math.random()),
+                id: String(Date.now() + Math.random()), // ID como String
                 nome: tipo === 'parcelada' ? `${nome} (${i+1}/${numParcelas})` : nome,
                 valor, tipo, paga: false
             });
@@ -154,14 +161,18 @@
 
     function togglePagar(id) {
         const chave = getChave(mes, ano);
-        const conta = dados[chave].contas.find(c => c.id === id);
-        if (conta) { conta.paga = !conta.paga; salvar(); }
+        const conta = dados[chave].contas.find(c => c.id === String(id));
+        if (conta) {
+            conta.paga = !conta.paga;
+            salvar();
+        }
     }
 
     function excluir(id) {
         if (!confirm("Excluir esta conta?")) return;
         const chave = getChave(mes, ano);
-        dados[chave].contas = dados[chave].contas.filter(c => c.id !== id);
+        // Filtra comparando strings
+        dados[chave].contas = dados[chave].contas.filter(c => String(c.id) !== String(id));
         salvar();
     }
 
@@ -170,18 +181,17 @@
         render();
     }
 
-    function atualizarGrafico(valores) {
-        const ctx = document.getElementById('meuGrafico').getContext('2d');
-        if (meuGrafico) meuGrafico.destroy();
-        
-        meuGrafico = new Chart(ctx, {
+    function atualizarGrafico(fixas, parcelas, normais) {
+        const ctx = document.getElementById('graficoGastos').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Único', 'Fixo', 'Parcelado'],
+                labels: ['Fixa', 'Parcelada', 'Única'],
                 datasets: [{
-                    data: valores,
-                    backgroundColor: ['#9e9e9e', '#673ab7', '#ff9800'],
-                    borderWidth: 0
+                    data: [fixas, parcelas, normais],
+                    backgroundColor: ['#673ab7', '#ff9800', '#9e9e9e'],
+                    hoverOffset: 4
                 }]
             },
             options: { plugins: { legend: { position: 'bottom' } } }
@@ -195,22 +205,26 @@
 
         if (!dados[chave]) dados[chave] = { salario: 0, extra: 0, contas: [] };
         const d = dados[chave];
-        document.getElementById('salario').value = d.salario;
-        document.getElementById('extra').value = d.extra;
 
-        let totalGasto = 0, gNormal = 0, gFixa = 0, gParcelada = 0;
+        document.getElementById('salario').value = d.salario || 0;
+        document.getElementById('extra').value = d.extra || 0;
+
+        let totalGasto = 0, vFixa = 0, vParcela = 0, vNormal = 0;
         const listaDiv = document.getElementById('lista');
         listaDiv.innerHTML = "";
 
         d.contas.forEach(c => {
             totalGasto += c.valor;
-            if (c.tipo === 'fixa') gFixa += c.valor;
-            else if (c.tipo === 'parcelada') gParcelada += c.valor;
-            else gNormal += c.valor;
+            if (c.tipo === 'fixa') vFixa += c.valor;
+            else if (c.tipo === 'parcelada') vParcela += c.valor;
+            else vNormal += c.valor;
 
             listaDiv.innerHTML += `
                 <div class="conta ${c.paga ? 'paga' : ''}">
-                    <div><strong>${c.nome}</strong> <span class="tag tag-${c.tipo}">${c.tipo}</span><br><small>${formatar(c.valor)}</small></div>
+                    <div>
+                        <strong>${c.nome}</strong> <span class="tag tag-${c.tipo}">${c.tipo}</span><br>
+                        <small>${formatar(c.valor)}</small>
+                    </div>
                     <div>
                         <button onclick="togglePagar('${c.id}')" style="background:var(--success)">✔</button>
                         <button onclick="excluir('${c.id}')" style="background:var(--danger)">🗑</button>
@@ -218,14 +232,15 @@
                 </div>`;
         });
 
-        const renda = d.salario + d.extra;
-        const saldo = renda - totalGasto;
-        document.getElementById('rendaTotal').innerText = formatar(renda);
+        const rendaTotal = (d.salario || 0) + (d.extra || 0);
+        const saldo = rendaTotal - totalGasto;
+
+        document.getElementById('rendaTotal').innerText = formatar(rendaTotal);
         document.getElementById('gastoTotal').innerText = formatar(totalGasto);
         document.getElementById('saldoMostra').innerText = formatar(saldo);
         document.getElementById('saldoCard').className = `saldo-box ${saldo >= 0 ? 'positivo' : 'negativo'}`;
 
-        atualizarGrafico([gNormal, gFixa, gParcelada]);
+        atualizarGrafico(vFixa, vParcela, vNormal);
     }
 
     render();
