@@ -3,166 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minhas Contas</title>
+    <title>Financeiro Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .card { border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .input-field { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-top: 5px; }
+        :root {
+            --android-blue: #1a73e8;
+            --android-bg: #f8f9fa;
+            --card-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        body { background-color: var(--android-bg); font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        .app-card { background: white; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 16px; padding: 16px; }
+        .btn-fab { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 28px; background: var(--android-blue); color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(26,115,232,0.4); border: none; font-size: 24px; cursor: pointer; z-index: 100; }
+        .status-pago { border-left: 5px solid #34a853; opacity: 0.8; }
+        .status-pendente { border-left: 5px solid #ea4335; }
+        .mes-nav { display: flex; align-items: center; justify-content: space-between; background: white; padding: 12px 20px; border-radius: 30px; margin-bottom: 20px; box-shadow: var(--card-shadow); }
+        input, select { border: 1px solid #dadce0; border-radius: 8px; padding: 10px; width: 100%; margin-top: 5px; outline: none; transition: border 0.2s; }
+        input:focus { border: 2px solid var(--android-blue); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+        .modal.active { display: flex; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans pb-10">
+<body class="pb-24">
 
-    <header class="bg-blue-600 text-white p-6 text-center shadow-lg">
-        <h1 class="text-2xl font-bold italic">Minhas Contas</h1>
-        <p class="text-sm opacity-80">Controle Financeiro Profissional</p>
+    <header class="bg-blue-700 text-white p-6 pb-12 rounded-b-[40px] shadow-lg">
+        <div class="max-w-md mx-auto">
+            <h1 class="text-xl font-medium opacity-90">Olá, Ricardo</h1>
+            <p class="text-xs uppercase tracking-wider opacity-70 mb-4">Resumo Financeiro</p>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <span class="text-xs">Saldo Disponível</span>
+                    <h2 id="display-saldo" class="text-2xl font-bold">R$ 0,00</h2>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs">Renda Total</span>
+                    <h2 id="display-renda" class="text-lg font-semibold">R$ 0,00</h2>
+                </div>
+            </div>
+        </div>
     </header>
 
-    <div class="max-w-md mx-auto p-4">
-        
-        <div class="bg-white p-6 mb-6 card flex justify-between items-center">
-            <div>
-                <p class="text-gray-500 text-sm">Saldo Total</p>
-                <h2 id="total-geral" class="text-2xl font-bold text-green-600">R$ 0,00</h2>
-            </div>
-            <div class="text-right">
-                <p class="text-gray-500 text-sm font-medium">Contas Ativas</p>
-                <span id="contagem-contas" class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded">0</span>
-            </div>
+    <main class="max-w-md mx-auto px-4 -mt-8">
+        <div class="mes-nav">
+            <button onclick="mudarMes(-1)" class="p-2 hover:bg-gray-100 rounded-full">❮</button>
+            <span id="mes-atual" class="font-bold text-gray-700 text-lg uppercase">Janeiro 2026</span>
+            <button onclick="mudarMes(1)" class="p-2 hover:bg-gray-100 rounded-full">❯</button>
         </div>
 
-        <div class="bg-white p-6 mb-6 card">
-            <h3 class="font-bold mb-4 text-gray-700 border-b pb-2 text-lg">Nova Conta</h3>
+        <div class="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
+            <button onclick="filtrar('todas')" class="bg-white px-4 py-2 rounded-full text-xs font-bold shadow-sm border border-gray-200">Todas</button>
+            <button onclick="filtrar('pendentes')" class="bg-white px-4 py-2 rounded-full text-xs font-bold shadow-sm border border-gray-200 text-red-500">Pendentes</button>
+            <button onclick="filtrar('pagas')" class="bg-white px-4 py-2 rounded-full text-xs font-bold shadow-sm border border-gray-200 text-green-600">Pagas</button>
+        </div>
+
+        <div id="lista-contas">
+            </div>
+    </main>
+
+    <button class="btn-fab" onclick="abrirModal()">+</button>
+
+    <div id="modal-conta" class="modal">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-gray-800">Nova Despesa/Renda</h3>
             
-            <label class="block mb-3">
-                <span class="text-gray-600 text-sm font-semibold">Descrição</span>
-                <input type="text" id="desc" class="input-field" placeholder="Ex: Supermercado">
-            </label>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-500">Descrição</label>
+                    <input type="text" id="input-nome" placeholder="Ex: Aluguel ou Salário">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500">Valor (R$)</label>
+                        <input type="number" id="input-valor" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500">Categoria</label>
+                        <select id="input-tipo">
+                            <option value="despesa">Despesa</option>
+                            <option value="renda">Renda (Entrada)</option>
+                        </select>
+                    </div>
+                </div>
 
-            <div class="grid grid-cols-2 gap-4 mb-3">
-                <label>
-                    <span class="text-gray-600 text-sm font-semibold">Valor (R$)</span>
-                    <input type="number" id="valor" class="input-field" step="0.01" placeholder="0,00">
-                </label>
-                <label>
-                    <span class="text-gray-600 text-sm font-semibold">Vencimento</span>
-                    <input type="date" id="data" class="input-field">
-                </label>
+                <div id="config-recorrencia">
+                    <label class="text-xs font-bold text-gray-500">Recorrência</label>
+                    <select id="input-recorrencia" onchange="toggleParcelas()">
+                        <option value="unica">Única</option>
+                        <option value="fixa">Fixa Mensal</option>
+                        <option value="parcelada">Parcelada</option>
+                    </select>
+                </div>
+
+                <div id="group-parcelas" class="hidden">
+                    <label class="text-xs font-bold text-gray-500">Número de Parcelas</label>
+                    <input type="number" id="input-num-parcelas" value="2" min="2">
+                </div>
             </div>
 
-            <label class="block mb-4">
-                <span class="text-gray-600 text-sm font-semibold">Parcelas (1 = à vista)</span>
-                <input type="number" id="parcelas" class="input-field" value="1" min="1">
-            </label>
-
-            <button onclick="adicionarConta()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
-                Registrar Conta
-            </button>
+            <div class="flex gap-3 mt-8">
+                <button onclick="fecharModal()" class="flex-1 py-3 text-gray-500 font-bold">Cancelar</button>
+                <button onclick="salvarItem()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">Salvar</button>
+            </div>
         </div>
-
-        <div class="space-y-4" id="lista-contas">
-            </div>
     </div>
 
     <script>
-        let contas = JSON.parse(localStorage.getItem('minhas_contas')) || [];
+        // Estado Global
+        let dataAtual = new Date();
+        let database = JSON.parse(localStorage.getItem('db_financeiro_pro')) || { itens: [] };
+        let filtroAtual = 'todas';
 
-        function adicionarConta() {
-            const desc = document.getElementById('desc').value;
-            const valor = parseFloat(document.getElementById('valor').value);
-            const data = document.getElementById('data').value;
-            const numParcelas = parseInt(document.getElementById('parcelas').value);
-
-            if (!desc || isNaN(valor) || !data) {
-                alert("Por favor, preencha todos os campos!");
-                return;
-            }
-
-            // Lógica de Parcelamento
-            for (let i = 0; i < numParcelas; i++) {
-                const dataVenc = new Date(data);
-                dataVenc.setMonth(dataVenc.getMonth() + i);
-
-                const novaConta = {
-                    id: Date.now() + i,
-                    desc: numParcelas > 1 ? `${desc} (${i + 1}/${numParcelas})` : desc,
-                    valor: (valor / numParcelas).toFixed(2),
-                    vencimento: dataVenc.toISOString().split('T')[0],
-                    paga: false
-                };
-                contas.push(novaConta);
-            }
-
-            salvarDados();
-            limparForm();
+        function mudarMes(direcao) {
+            dataAtual.setMonth(dataAtual.getMonth() + direcao);
             renderizar();
         }
 
-        function togglePaga(id) {
-            contas = contas.map(c => c.id === id ? { ...c, paga: !c.paga } : c);
-            salvarDados();
+        function toggleParcelas() {
+            const tipo = document.getElementById('input-recorrencia').value;
+            document.getElementById('group-parcelas').classList.toggle('hidden', tipo !== 'parcelada');
+        }
+
+        function abrirModal() {
+            document.getElementById('modal-conta').classList.add('active');
+        }
+
+        function fecharModal() {
+            document.getElementById('modal-conta').classList.remove('active');
+            limparCampos();
+        }
+
+        function salvarItem() {
+            const nome = document.getElementById('input-nome').value;
+            const valor = parseFloat(document.getElementById('input-valor').value);
+            const tipo = document.getElementById('input-tipo').value;
+            const recorrencia = document.getElementById('input-recorrencia').value;
+            const numParcelas = parseInt(document.getElementById('input-num-parcelas').value);
+
+            if (!nome || isNaN(valor)) return alert("Preencha os campos corretamente.");
+
+            const mesRef = dataAtual.getMonth();
+            const anoRef = dataAtual.getFullYear();
+
+            if (recorrencia === 'parcelada') {
+                const valorParcela = valor / numParcelas;
+                for (let i = 0; i < numParcelas; i++) {
+                    let d = new Date(anoRef, mesRef + i, 1);
+                    database.itens.push({
+                        id: Date.now() + i,
+                        nome: `${nome} (${i+1}/${numParcelas})`,
+                        valor: valorParcela,
+                        tipo,
+                        mes: d.getMonth(),
+                        ano: d.getFullYear(),
+                        paga: false,
+                        recorrencia: 'parcelada'
+                    });
+                }
+            } else {
+                database.itens.push({
+                    id: Date.now(),
+                    nome,
+                    valor,
+                    tipo,
+                    mes: mesRef,
+                    ano: anoRef,
+                    paga: false,
+                    recorrencia
+                });
+            }
+
+            salvarDB();
+            fecharModal();
             renderizar();
         }
 
-        function removerConta(id) {
-            if(confirm("Deseja excluir este registro?")) {
-                contas = contas.filter(c => c.id !== id);
-                salvarDados();
+        function toggleStatus(id) {
+            const item = database.itens.find(i => i.id === id);
+            if (item) item.paga = !item.paga;
+            salvarDB();
+            renderizar();
+        }
+
+        function excluirItem(id) {
+            if (confirm("Excluir este registro?")) {
+                database.itens = database.itens.filter(i => i.id !== id);
+                salvarDB();
                 renderizar();
             }
         }
 
-        function salvarDados() {
-            localStorage.setItem('minhas_contas', JSON.stringify(contas));
-        }
-
-        function limparForm() {
-            document.getElementById('desc').value = '';
-            document.getElementById('valor').value = '';
-            document.getElementById('parcelas').value = '1';
-        }
-
-        function formatarMoeda(valor) {
-            return parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        function salvarDB() {
+            localStorage.setItem('db_financeiro_pro', JSON.stringify(database));
         }
 
         function renderizar() {
-            const lista = document.getElementById('lista-contas');
-            const totalGeral = document.getElementById('total-geral');
-            const contagem = document.getElementById('contagem-contas');
-            
-            lista.innerHTML = '';
-            let soma = 0;
+            const container = document.getElementById('lista-contas');
+            const mesNome = dataAtual.toLocaleString('pt-br', { month: 'long', year: 'numeric' });
+            document.getElementById('mes-atual').innerText = mesNome;
 
-            // Ordenar por data
-            contas.sort((a, b) => new Date(a.vencimento) - new Date(b.vencimento));
+            container.innerHTML = '';
+            let totalRenda = 0;
+            let totalDespesa = 0;
 
-            contas.forEach(c => {
-                if (!c.paga) soma += parseFloat(c.valor);
-
-                const div = document.createElement('div');
-                div.className = `p-4 bg-white card border-l-4 ${c.paga ? 'border-gray-400 opacity-60' : 'border-red-500'}`;
-                
-                div.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <div onclick="togglePaga(${c.id})" class="cursor-pointer flex-1">
-                            <h4 class="font-bold ${c.paga ? 'line-through' : ''}">${c.desc}</h4>
-                            <p class="text-sm text-gray-500">${c.vencimento.split('-').reverse().join('/')}</p>
-                            <p class="text-blue-600 font-semibold">${formatarMoeda(c.valor)}</p>
-                        </div>
-                        <button onclick="removerConta(${c.id})" class="text-red-400 hover:text-red-600 px-2">
-                            ✕
-                        </button>
-                    </div>
-                `;
-                lista.appendChild(div);
+            // Filtra itens do mês atual + contas fixas
+            const itensMes = database.itens.filter(i => {
+                if (i.recorrencia === 'fixa') return true; // Fixa aparece sempre
+                return i.mes === dataAtual.getMonth() && i.ano === dataAtual.getFullYear();
             });
 
-            totalGeral.innerText = formatarMoeda(soma);
-            totalGeral.className = soma > 0 ? "text-2xl font-bold text-red-600" : "text-2xl font-bold text-green-600";
-            contagem.innerText = contas.filter(c => !c.paga).length;
+            itensMes.forEach(item => {
+                if (item.tipo === 'renda') {
+                    totalRenda += item.valor;
+                } else {
+                    if (filtroAtual === 'pendentes' && item.paga) return;
+                    if (filtroAtual === 'pagas' && !item.paga) return;
+                    totalDespesa += item.valor;
+                }
+
+                if (item.tipo === 'despesa') {
+                    const card = document.createElement('div');
+                    card.className = `app-card flex justify-between items-center ${item.paga ? 'status-pago' : 'status-pendente'}`;
+                    card.innerHTML = `
+                        <div onclick="toggleStatus(${item.id})" class="flex-1 cursor-pointer">
+                            <h4 class="font-bold text-gray-800 ${item.paga ? 'line-through text-gray-400' : ''}">${item.nome}</h4>
+                            <p class="text-xs text-gray-500">${item.recorrencia === 'fixa' ? 'Mensal Fixa' : 'Parcela/Única'}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold ${item.paga ? 'text-gray-400' : 'text-red-500'}">R$ ${item.valor.toFixed(2)}</p>
+                            <button onclick="excluirItem(${item.id})" class="text-[10px] text-gray-300 uppercase font-bold hover:text-red-500">Excluir</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+            });
+
+            // Dash
+            const saldo = totalRenda - totalDespesa;
+            document.getElementById('display-renda').innerText = `R$ ${totalRenda.toFixed(2)}`;
+            const saldoEl = document.getElementById('display-saldo');
+            saldoEl.innerText = `R$ ${saldo.toFixed(2)}`;
+            
+            // Cores Indicativas
+            if (saldo < 0) saldoEl.className = "text-2xl font-bold text-red-300";
+            else if (saldo < totalRenda * 0.2) saldoEl.className = "text-2xl font-bold text-yellow-300";
+            else saldoEl.className = "text-2xl font-bold text-green-300";
         }
 
-        // Inicializar app
+        function filtrar(f) {
+            filtroAtual = f;
+            renderizar();
+        }
+
+        function limparCampos() {
+            document.getElementById('input-nome').value = '';
+            document.getElementById('input-valor').value = '';
+            document.getElementById('input-recorrencia').value = 'unica';
+            document.getElementById('group-parcelas').classList.add('hidden');
+        }
+
         renderizar();
     </script>
 </body>
