@@ -1,249 +1,249 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle Financeiro - Ricardo Kerber</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --primary: #1e88e5;
-            --secondary: #2e7d32;
-            --danger: #f44336;
-            --success: #4caf50;
-            --bg: #f4f7f6;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solicitação de Uniforme</title>
 
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: var(--bg); color: #333; }
-        header { background: var(--primary); color: white; padding: 20px; text-align: center; font-size: 22px; font-weight: bold; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-        .mesControle { display: flex; justify-content: space-around; align-items: center; padding: 15px; background: white; margin-bottom: 10px; border-bottom: 1px solid #ddd; }
-        .container { padding: 15px; max-width: 500px; margin: auto; }
-        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+<style>
+body {
+    font-family: Arial;
+    background:#f4f6f9;
+    margin:0;
+    padding:10px;
+}
 
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; }
-        button { padding: 12px; border: none; border-radius: 8px; background: var(--primary); color: white; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:active { transform: scale(0.98); }
+.container {
+    max-width:500px;
+    margin:auto;
+}
 
-        .conta { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
-        .paga { opacity: 0.5; text-decoration: line-through; }
-        
-        .tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; color: white; text-transform: uppercase; margin-left: 5px; }
-        .tag-fixa { background: #673ab7; }
-        .tag-parcelada { background: #ff9800; }
-        .tag-normal { background: #9e9e9e; }
+h2, h3 {
+    text-align:center;
+}
 
-        .resumo-valores { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center; }
-        .saldo-box { grid-column: span 2; padding: 10px; border-radius: 8px; margin-top: 10px; font-weight: bold; }
-        .positivo { background: #e8f5e9; color: var(--secondary); }
-        .negativo { background: #ffebee; color: var(--danger); }
-        
-        canvas { max-width: 100%; margin: 15px 0; }
-    </style>
+input, button {
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+button {
+    background:#2c7be5;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.item {
+    background:white;
+    padding:10px;
+    border-radius:8px;
+    margin-top:10px;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+
+.card-preview {
+    position:fixed;
+    top:-9999px;
+}
+
+.card {
+    width:300px;
+    background:#fff;
+    padding:15px;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.3);
+    font-size:14px;
+}
+
+.title {
+    text-align:center;
+    font-weight:bold;
+}
+
+.section {
+    margin-top:8px;
+}
+</style>
 </head>
+
 <body>
 
-<header>Minhas Contas</header>
-
-<div class="mesControle">
-    <button onclick="mudarMes(-1)">←</button>
-    <div id="mesAtual" style="font-size: 18px; font-weight: bold;"></div>
-    <button onclick="mudarMes(1)">→</button>
-</div>
-
 <div class="container">
-    <div class="card">
-        <div class="resumo-valores">
-            <div><small>Renda Total</small><br><strong id="rendaTotal">R$ 0,00</strong></div>
-            <div><small>Gasto Total</small><br><strong id="gastoTotal">R$ 0,00</strong></div>
-            <div id="saldoCard" class="saldo-box">Saldo Atual: <span id="saldoMostra">R$ 0,00</span></div>
-        </div>
-        <canvas id="graficoGastos"></canvas>
-    </div>
 
-    <div class="card">
-        <h3>Lançamentos</h3>
-        <input id="salario" type="number" placeholder="Salário Base">
-        <input id="extra" type="number" placeholder="Extras">
-        <button onclick="salvarRenda()" style="width: 100%; margin-bottom: 20px;">Atualizar Renda</button>
-        <hr>
-        <input id="nome" placeholder="Descrição (Ex: Aluguel)">
-        <input id="valor" type="number" placeholder="Valor R$">
-        <select id="tipo" onchange="document.getElementById('divParcelas').style.display = (this.value === 'parcelada' ? 'block' : 'none')">
-            <option value="normal">Gasto Único</option>
-            <option value="fixa">Conta Fixa</option>
-            <option value="parcelada">Parcelado</option>
-        </select>
-        <div id="divParcelas" style="display: none;">
-            <input id="parcelas" type="number" placeholder="Nº de Parcelas" value="1">
-        </div>
-        <button onclick="adicionarConta()" style="width: 100%; background: var(--secondary);">Adicionar Conta</button>
-    </div>
+<h2>Solicitação de Uniforme</h2>
 
-    <div class="card">
-        <h3>Lista de Contas</h3>
-        <div id="lista"></div>
-    </div>
+<input id="nome" placeholder="Nome do colaborador">
+<input id="matricula" placeholder="Matrícula">
+<input id="posto" placeholder="Posto">
+<input id="itens" placeholder="Ex: Camisa G - 2x, Calça M - 1x">
+<input id="motivo" placeholder="Motivo">
+<input id="solicitante" placeholder="Solicitante">
+
+<button onclick="salvar()">Registrar</button>
+<button onclick="toggleHistorico()">Ver Histórico</button>
+
+<div id="lista"></div>
+<div id="historico" style="display:none;"></div>
+
 </div>
+
+<div id="card" class="card-preview"></div>
 
 <script>
-    let dados = JSON.parse(localStorage.getItem("dadosContas")) || {};
-    let hj = new Date();
-    let mes = hj.getMonth();
-    let ano = hj.getFullYear();
-    let chartInstance = null;
+let dados = JSON.parse(localStorage.getItem("uniformes")) || [];
 
-    const formatar = (v) => v.toLocaleString('pt-br', { style: 'currency', currency: 'BRL' });
-    const getChave = (m, a) => `${a}-${m}`;
+function salvar() {
+    let obj = {
+        id: Date.now(),
+        nome: nome.value,
+        matricula: matricula.value,
+        posto: posto.value,
+        itens: itens.value,
+        motivo: motivo.value,
+        solicitante: solicitante.value,
+        status: "Solicitado",
+        data: new Date().toLocaleString()
+    };
 
-    function mudarMes(delta) {
-        mes += delta;
-        if (mes < 0) { mes = 11; ano--; }
-        if (mes > 11) { mes = 0; ano++; }
-        verificarEReplicarFixas();
-        render();
+    dados.push(obj);
+    localStorage.setItem("uniformes", JSON.stringify(dados));
+    limpar();
+    listar();
+}
+
+function limpar() {
+    ["nome","matricula","posto","itens","motivo","solicitante"]
+    .forEach(id => document.getElementById(id).value = "");
+}
+
+function corStatus(status) {
+    switch(status) {
+        case "Solicitado": return "orange";
+        case "Em análise": return "blue";
+        case "Separando": return "purple";
+        case "Pronto": return "green";
+        case "Entregue": return "gray";
+        default: return "black";
     }
+}
 
-    function verificarEReplicarFixas() {
-        const chaveAtual = getChave(mes, ano);
-        if (!dados[chaveAtual] || dados[chaveAtual].contas.length === 0) {
-            let mAnt = mes - 1, aAnt = ano;
-            if (mAnt < 0) { mAnt = 11; aAnt--; }
-            const chaveAnt = getChave(mAnt, aAnt);
+function listar() {
+    lista.innerHTML = "";
 
-            if (dados[chaveAnt]) {
-                const fixas = dados[chaveAnt].contas.filter(c => c.tipo === 'fixa');
-                dados[chaveAtual] = { salario: dados[chaveAnt].salario, extra: 0, contas: [] };
-                fixas.forEach(f => {
-                    dados[chaveAtual].contas.push({ 
-                        ...f, 
-                        id: String(Date.now() + Math.random()), 
-                        paga: false 
-                    });
-                });
-                salvar();
-            }
-        }
+    dados
+    .filter(d => d.status !== "Entregue")
+    .forEach(d => {
+        lista.innerHTML += `
+        <div class="item">
+            <b>${d.nome}</b><br>
+            Posto: ${d.posto}<br>
+            Status: <span style="color:${corStatus(d.status)}">${d.status}</span><br><br>
+
+            <button onclick="mudarStatus(${d.id})">Mudar Status</button>
+            <button onclick="gerarCard(${d.id})">Gerar Card</button>
+            <button onclick="compartilharWhats(${d.id})">WhatsApp</button>
+        </div>
+        `;
+    });
+}
+
+function listarHistorico() {
+    historico.innerHTML = "<h3>Histórico</h3>";
+
+    dados
+    .filter(d => d.status === "Entregue")
+    .forEach(d => {
+        historico.innerHTML += `
+        <div class="item">
+            <b>${d.nome}</b><br>
+            Posto: ${d.posto}<br>
+            Status: <span style="color:${corStatus(d.status)}">${d.status}</span>
+        </div>
+        `;
+    });
+}
+
+function toggleHistorico() {
+    if (historico.style.display === "none") {
+        historico.style.display = "block";
+        listarHistorico();
+    } else {
+        historico.style.display = "none";
     }
+}
 
-    function salvarRenda() {
-        const chave = getChave(mes, ano);
-        if (!dados[chave]) dados[chave] = { salario: 0, extra: 0, contas: [] };
-        dados[chave].salario = Number(document.getElementById('salario').value);
-        dados[chave].extra = Number(document.getElementById('extra').value);
-        salvar();
-    }
+function mudarStatus(id) {
+    let fluxo = ["Solicitado","Em análise","Separando","Pronto","Entregue"];
+    let item = dados.find(d => d.id === id);
+    let i = fluxo.indexOf(item.status);
+    item.status = fluxo[(i+1) % fluxo.length];
 
-    function adicionarConta() {
-        const nome = document.getElementById('nome').value;
-        const valor = Number(document.getElementById('valor').value);
-        const tipo = document.getElementById('tipo').value;
-        const numParcelas = tipo === 'parcelada' ? Number(document.getElementById('parcelas').value) : 1;
+    localStorage.setItem("uniformes", JSON.stringify(dados));
+    listar();
+}
 
-        if (!nome || !valor) return alert("Preencha os campos!");
+function gerarCard(id) {
+    let d = dados.find(x => x.id === id);
 
-        for (let i = 0; i < numParcelas; i++) {
-            let m = mes + i, a = ano;
-            while (m > 11) { m -= 12; a++; }
-            const chave = getChave(m, a);
-            if (!dados[chave]) dados[chave] = { salario: 0, extra: 0, contas: [] };
-            
-            dados[chave].contas.push({
-                id: String(Date.now() + Math.random()), // ID como String
-                nome: tipo === 'parcelada' ? `${nome} (${i+1}/${numParcelas})` : nome,
-                valor, tipo, paga: false
-            });
-        }
-        salvar();
-        document.getElementById('nome').value = '';
-        document.getElementById('valor').value = '';
-    }
+    card.innerHTML = `
+    <div class="card">
+        <div class="title">QUÂNTICA SEGURANÇA</div>
+        <div class="title">Solicitação de Uniforme</div>
 
-    function togglePagar(id) {
-        const chave = getChave(mes, ano);
-        const conta = dados[chave].contas.find(c => c.id === String(id));
-        if (conta) {
-            conta.paga = !conta.paga;
-            salvar();
-        }
-    }
+        <div class="section">${d.data}</div>
 
-    function excluir(id) {
-        if (!confirm("Excluir esta conta?")) return;
-        const chave = getChave(mes, ano);
-        // Filtra comparando strings
-        dados[chave].contas = dados[chave].contas.filter(c => String(c.id) !== String(id));
-        salvar();
-    }
+        <div class="section">
+        <b>Colaborador:</b> ${d.nome}<br>
+        <b>Matrícula:</b> ${d.matricula}<br>
+        <b>Posto:</b> ${d.posto}
+        </div>
 
-    function salvar() {
-        localStorage.setItem("dadosContas", JSON.stringify(dados));
-        render();
-    }
+        <div class="section">
+        <b>Itens:</b><br>${d.itens}
+        </div>
 
-    function atualizarGrafico(fixas, parcelas, normais) {
-        const ctx = document.getElementById('graficoGastos').getContext('2d');
-        if (chartInstance) chartInstance.destroy();
-        chartInstance = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Fixa', 'Parcelada', 'Única'],
-                datasets: [{
-                    data: [fixas, parcelas, normais],
-                    backgroundColor: ['#673ab7', '#ff9800', '#9e9e9e'],
-                    hoverOffset: 4
-                }]
-            },
-            options: { plugins: { legend: { position: 'bottom' } } }
-        });
-    }
+        <div class="section">
+        <b>Motivo:</b> ${d.motivo}<br>
+        <b>Solicitante:</b> ${d.solicitante}<br>
+        <b>Status:</b> ${d.status}
+        </div>
 
-    function render() {
-        const chave = getChave(mes, ano);
-        const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-        document.getElementById('mesAtual').innerText = `${mesesNomes[mes]} / ${ano}`;
+        <div class="section"><b>ID:</b> ${d.id}</div>
+    </div>
+    `;
 
-        if (!dados[chave]) dados[chave] = { salario: 0, extra: 0, contas: [] };
-        const d = dados[chave];
+    html2canvas(card.firstElementChild).then(canvas => {
+        let link = document.createElement("a");
+        link.download = "uniforme.png";
+        link.href = canvas.toDataURL();
+        link.click();
+    });
+}
 
-        document.getElementById('salario').value = d.salario || 0;
-        document.getElementById('extra').value = d.extra || 0;
+function compartilharWhats(id) {
+    let d = dados.find(x => x.id === id);
 
-        let totalGasto = 0, vFixa = 0, vParcela = 0, vNormal = 0;
-        const listaDiv = document.getElementById('lista');
-        listaDiv.innerHTML = "";
+    let msg =
+`📦 Solicitação de Uniforme
+👤 ${d.nome}
+🏢 ${d.posto}
 
-        d.contas.forEach(c => {
-            totalGasto += c.valor;
-            if (c.tipo === 'fixa') vFixa += c.valor;
-            else if (c.tipo === 'parcelada') vParcela += c.valor;
-            else vNormal += c.valor;
+👕 ${d.itens}
 
-            listaDiv.innerHTML += `
-                <div class="conta ${c.paga ? 'paga' : ''}">
-                    <div>
-                        <strong>${c.nome}</strong> <span class="tag tag-${c.tipo}">${c.tipo}</span><br>
-                        <small>${formatar(c.valor)}</small>
-                    </div>
-                    <div>
-                        <button onclick="togglePagar('${c.id}')" style="background:var(--success)">✔</button>
-                        <button onclick="excluir('${c.id}')" style="background:var(--danger)">🗑</button>
-                    </div>
-                </div>`;
-        });
+📌 Status: ${d.status}
+🆔 ID: ${d.id}`;
 
-        const rendaTotal = (d.salario || 0) + (d.extra || 0);
-        const saldo = rendaTotal - totalGasto;
+    window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+}
 
-        document.getElementById('rendaTotal').innerText = formatar(rendaTotal);
-        document.getElementById('gastoTotal').innerText = formatar(totalGasto);
-        document.getElementById('saldoMostra').innerText = formatar(saldo);
-        document.getElementById('saldoCard').className = `saldo-box ${saldo >= 0 ? 'positivo' : 'negativo'}`;
-
-        atualizarGrafico(vFixa, vParcela, vNormal);
-    }
-
-    render();
+listar();
 </script>
+
 </body>
 </html>
