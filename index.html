@@ -20,231 +20,183 @@
 </head>
 <body class="pb-28">
 
-    <header class="bg-blue-700 text-white p-6 pb-14 rounded-b-[45px] shadow-xl">
-        <div class="max-w-md mx-auto">
-            <h1 class="text-xl font-bold opacity-80 italic">Meu Financeiro</h1>
-            <div class="grid grid-cols-2 gap-6 mt-4">
-                <div>
-                    <span class="text-xs font-medium opacity-70">Saldo do Mês</span>
-                    <h2 id="display-saldo" class="text-3xl font-black text-white">R$ 0,00</h2>
-                </div>
-                <div class="text-right">
-                    <span class="text-xs font-medium opacity-70">Renda Total</span>
-                    <h2 id="display-renda" class="text-xl font-bold">R$ 0,00</h2>
-                </div>
+<header class="bg-blue-700 text-white p-6 pb-14 rounded-b-[45px] shadow-xl">
+    <div class="max-w-md mx-auto">
+        <h1 class="text-xl font-bold opacity-80 italic">Meu Financeiro</h1>
+        <div class="grid grid-cols-2 gap-6 mt-4">
+            <div>
+                <span class="text-xs font-medium opacity-70">Saldo do Mês</span>
+                <h2 id="display-saldo" class="text-3xl font-black text-white">R$ 0,00</h2>
             </div>
-        </div>
-    </header>
-
-    <main class="max-w-md mx-auto px-4 -mt-10">
-        <div class="mes-nav">
-            <button onclick="mudarMes(-1)" class="text-blue-600 p-2 font-black text-xl">❮</button>
-            <span id="mes-atual" class="font-black text-gray-700 uppercase tracking-widest text-sm text-center">Janeiro 2026</span>
-            <button onclick="mudarMes(1)" class="text-blue-600 p-2 font-black text-xl">❯</button>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 mb-6">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                <p class="text-[9px] font-black text-blue-500 uppercase">Entradas</p>
-                <p id="resumo-entradas" class="font-bold text-gray-700 text-lg">R$ 0,00</p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                <p class="text-[9px] font-black text-red-500 uppercase">Gastos</p>
-                <p id="resumo-saidas" class="font-bold text-gray-700 text-lg">R$ 0,00</p>
-            </div>
-        </div>
-
-        <div id="lista-financeira" class="space-y-3"></div>
-    </main>
-
-    <button class="btn-fab" onclick="abrirModal()">+</button>
-
-    <div id="modal-form" class="modal">
-        <div class="bg-white w-full max-w-sm rounded-[30px] p-7 shadow-2xl">
-            <h3 id="modal-titulo" class="text-xl font-black mb-6 text-gray-800">Novo Lançamento</h3>
-            <input type="hidden" id="edit-id">
-            
-            <div class="space-y-4">
-                <input type="text" id="in-nome" placeholder="Descrição" class="w-full p-4 bg-gray-100 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
-                
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="number" step="0.01" id="in-valor" placeholder="Valor R$" class="p-4 bg-gray-100 border-none rounded-2xl outline-none">
-                    <select id="in-tipo" class="p-4 bg-gray-100 border-none rounded-2xl outline-none font-bold text-gray-600">
-                        <option value="despesa">Despesa</option>
-                        <option value="renda">Renda</option>
-                    </select>
-                </div>
-
-                <div id="container-frequencia">
-                    <label class="text-[10px] font-black text-gray-400 uppercase ml-2">Duração / Repetição</label>
-                    <select id="in-rec" onchange="checkParcelas()" class="w-full p-4 bg-gray-100 border-none rounded-2xl outline-none mt-1">
-                        <option value="unica">Somente este mês</option>
-                        <option value="fixa">Fixo (Todo mês)</option>
-                        <option value="parcelada">Repetir por X meses</option>
-                    </select>
-                </div>
-
-                <div id="box-parcelas" class="hidden">
-                    <input type="number" id="in-num-p" placeholder="Quantidade de meses" class="w-full p-4 bg-gray-100 border-none rounded-2xl outline-none">
-                </div>
-            </div>
-
-            <div class="flex gap-4 mt-8">
-                <button onclick="fecharModal()" class="flex-1 py-4 text-gray-400 font-bold">Cancelar</button>
-                <button onclick="salvar()" class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg">SALVAR</button>
+            <div class="text-right">
+                <span class="text-xs font-medium opacity-70">Renda Total</span>
+                <h2 id="display-renda" class="text-xl font-bold">R$ 0,00</h2>
             </div>
         </div>
     </div>
+</header>
 
-    <script>
-        let dataRef = new Date();
-        let db = JSON.parse(localStorage.getItem('db_financeiro_v3')) || { logs: [] };
+<main class="max-w-md mx-auto px-4 -mt-10">
+    <div class="mes-nav">
+        <button onclick="mudarMes(-1)" class="text-blue-600 p-2 font-black text-xl">❮</button>
+        <span id="mes-atual" class="font-black text-gray-700 uppercase tracking-widest text-sm text-center">Janeiro 2026</span>
+        <button onclick="mudarMes(1)" class="text-blue-600 p-2 font-black text-xl">❯</button>
+    </div>
 
-        function mudarMes(n) {
-            dataRef.setMonth(dataRef.getMonth() + n);
-            renderizar();
-        }
+    <div class="grid grid-cols-2 gap-3 mb-6">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+            <p class="text-[9px] font-black text-blue-500 uppercase">Entradas</p>
+            <p id="resumo-entradas" class="font-bold text-gray-700 text-lg">R$ 0,00</p>
+        </div>
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+            <p class="text-[9px] font-black text-red-500 uppercase">Gastos</p>
+            <p id="resumo-saidas" class="font-bold text-gray-700 text-lg">R$ 0,00</p>
+        </div>
+    </div>
 
-        function checkParcelas() {
-            const isP = document.getElementById('in-rec').value === 'parcelada';
-            document.getElementById('box-parcelas').classList.toggle('hidden', !isP);
-        }
+    <div id="lista-financeira" class="space-y-3"></div>
+</main>
 
-        function abrirModal(id = null) {
-            const modal = document.getElementById('modal-form');
-            const titulo = document.getElementById('modal-titulo');
-            const freqBox = document.getElementById('container-frequencia');
-            limpar();
+<button class="btn-fab" onclick="abrirModal()">+</button>
 
-            if(id) {
-                // Conversão para string garante que o find funcione mesmo com IDs longos
-                const item = db.logs.find(x => String(x.id) === String(id));
-                if(item) {
-                    document.getElementById('edit-id').value = id;
-                    document.getElementById('in-nome').value = item.nome;
-                    document.getElementById('in-valor').value = item.valor;
-                    document.getElementById('in-tipo').value = item.tipo;
-                    freqBox.classList.add('hidden');
-                    titulo.innerText = "Alterar Informação";
-                }
-            } else {
-                document.getElementById('edit-id').value = "";
-                freqBox.classList.remove('hidden');
-                titulo.innerText = "Novo Lançamento";
-            }
-            modal.classList.add('active');
-        }
-
-        function fecharModal() { document.getElementById('modal-form').classList.remove('active'); }
-
-        function salvar() {
-            const idEdit = document.getElementById('edit-id').value;
-            const nome = document.getElementById('in-nome').value;
-            const valor = parseFloat(document.getElementById('in-valor').value);
-            const tipo = document.getElementById('in-tipo').value;
-            const rec = document.getElementById('in-rec').value;
-            const numP = parseInt(document.getElementById('in-num-p').value) || 1;
-
-            if(!nome || isNaN(valor)) return alert("Preencha os campos obrigatórios.");
-
-            if(idEdit) {
-                const index = db.logs.findIndex(x => String(x.id) === String(idEdit));
-                if(index !== -1) db.logs[index] = { ...db.logs[index], nome, valor, tipo };
-            } else {
-                const m = dataRef.getMonth();
-                const a = dataRef.getFullYear();
-                
-                if(rec === 'parcelada') {
-                    for(let i=0; i < numP; i++) {
-                        let d = new Date(a, m + i, 1);
-                        db.logs.push({ 
-                            id: String(Date.now() + i), // Salva como String para evitar erro de precisão
-                            nome: numP > 1 ? `${nome} (${i+1}/${numP})` : nome, 
-                            valor, tipo, mes: d.getMonth(), ano: d.getFullYear(), paga: false, rec: 'parcelada' 
-                        });
-                    }
-                } else {
-                    db.logs.push({ id: String(Date.now()), nome, valor, tipo, mes: m, ano: a, paga: false, rec });
-                }
-            }
-
-            atualizarDB();
-            fecharModal();
-            renderizar();
-        }
-
-        function renderizar() {
-            const lista = document.getElementById('lista-financeira');
-            const mRef = dataRef.getMonth();
-            const aRef = dataRef.getFullYear();
+<div id="modal-form" class="modal">
+    <div class="bg-white w-full max-w-sm rounded-[30px] p-7 shadow-2xl">
+        <h3 id="modal-titulo" class="text-xl font-black mb-6 text-gray-800">Novo Lançamento</h3>
+        <input type="hidden" id="edit-id">
+        
+        <div class="space-y-4">
+            <input type="text" id="in-nome" placeholder="Descrição" class="w-full p-4 bg-gray-100 rounded-2xl outline-none">
             
-            document.getElementById('mes-atual').innerText = dataRef.toLocaleString('pt-br', { month: 'long', year: 'numeric' });
-            lista.innerHTML = '';
+            <div class="grid grid-cols-2 gap-3">
+                <input type="number" step="0.01" id="in-valor" placeholder="Valor R$" class="p-4 bg-gray-100 rounded-2xl outline-none">
+                <select id="in-tipo" class="p-4 bg-gray-100 rounded-2xl outline-none font-bold text-gray-600">
+                    <option value="despesa">Despesa</option>
+                    <option value="renda">Renda</option>
+                </select>
+            </div>
 
-            let rTotal = 0, dTotal = 0;
+            <div id="container-frequencia">
+                <select id="in-rec" onchange="checkParcelas()" class="w-full p-4 bg-gray-100 rounded-2xl outline-none">
+                    <option value="unica">Somente este mês</option>
+                    <option value="fixa">Fixo</option>
+                    <option value="parcelada">Parcelada</option>
+                </select>
+            </div>
 
-            const filtrados = db.logs.filter(i => i.rec === 'fixa' || (i.mes === mRef && i.ano === aRef));
+            <div id="box-parcelas" class="hidden">
+                <input type="number" id="in-num-p" placeholder="Meses" class="w-full p-4 bg-gray-100 rounded-2xl outline-none">
+            </div>
+        </div>
 
-            filtrados.forEach(i => {
-                const isR = i.tipo === 'renda';
-                if(isR) rTotal += i.valor; else dTotal += i.valor;
+        <div class="flex gap-4 mt-8">
+            <button onclick="fecharModal()" class="flex-1 py-4 text-gray-400 font-bold">Cancelar</button>
+            <button onclick="salvar()" class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black">SALVAR</button>
+        </div>
+    </div>
+</div>
 
-                const card = document.createElement('div');
-                card.className = `app-card flex justify-between items-center ${isR ? 'status-renda' : (i.paga ? 'status-pago opacity-60' : 'status-pendente')}`;
-                
-                // CORREÇÃO AQUI: Aspas simples envolvidas nos IDs das funções onclick
-                card.innerHTML = `
-                    <div onclick="${isR ? '' : `togglePaga('${i.id}')`}" class="flex-1 cursor-pointer">
-                        <h4 class="font-bold text-gray-800 ${!isR && i.paga ? 'line-through text-gray-400' : ''}">${i.nome}</h4>
-                        <p class="text-[9px] text-gray-400 font-black uppercase">${i.rec === 'fixa' ? 'Recorrente' : (i.rec === 'parcelada' ? 'Parcelado' : 'Único')}</p>
-                    </div>
-                    <div class="text-right flex flex-col items-end gap-1">
-                        <p class="font-black ${isR ? 'text-blue-600' : 'text-red-500'}">R$ ${i.valor.toFixed(2)}</p>
-                        <div class="flex gap-3">
-                            <button onclick="abrirModal('${i.id}')" class="text-[10px] text-blue-400 font-bold uppercase">Editar</button>
-                            <button onclick="excluir('${i.id}')" class="text-[10px] text-gray-300 font-bold uppercase hover:text-red-500">Excluir</button>
-                        </div>
-                    </div>
-                `;
-                lista.appendChild(card);
-            });
+<script>
+let dataRef = new Date();
+let db = JSON.parse(localStorage.getItem('db_financeiro_v3')) || { logs: [] };
 
-            const saldo = rTotal - dTotal;
-            document.getElementById('display-renda').innerText = `R$ ${rTotal.toFixed(2)}`;
-            document.getElementById('resumo-entradas').innerText = `R$ ${rTotal.toFixed(2)}`;
-            document.getElementById('resumo-saidas').innerText = `R$ ${dTotal.toFixed(2)}`;
-            document.getElementById('display-saldo').innerText = `R$ ${saldo.toFixed(2)}`;
+function mudarMes(n) {
+    dataRef.setMonth(dataRef.getMonth() + n);
+    renderizar();
+}
+
+function checkParcelas() {
+    const isP = document.getElementById('in-rec').value === 'parcelada';
+    document.getElementById('box-parcelas').classList.toggle('hidden', !isP);
+}
+
+function abrirModal(id = null) {
+    limpar();
+    if(id) {
+        const item = db.logs.find(x => String(x.id) === String(id));
+        if(item) {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('in-nome').value = item.nome;
+            document.getElementById('in-valor').value = item.valor;
+            document.getElementById('in-tipo').value = item.tipo;
         }
+    }
+    document.getElementById('modal-form').classList.add('active');
+}
 
-        function togglePaga(id) {
-            const i = db.logs.find(x => String(x.id) === String(id));
-            if(i && i.tipo === 'despesa') i.paga = !i.paga;
-            atualizarDB();
-            renderizar();
-        }
+function fecharModal() {
+    document.getElementById('modal-form').classList.remove('active');
+}
 
-        function excluir(id) {
-            if(confirm("Deseja apagar este lançamento?")) {
-                // Filtra comparando como String para evitar erro de tipo
-                db.logs = db.logs.filter(x => String(x.id) !== String(id));
-                atualizarDB();
-                renderizar();
-            }
-        }
+function salvar() {
+    const idEdit = document.getElementById('edit-id').value;
+    const nome = document.getElementById('in-nome').value;
+    const valor = parseFloat(document.getElementById('in-valor').value);
+    const tipo = document.getElementById('in-tipo').value;
 
-        function atualizarDB() {
-            localStorage.setItem('db_financeiro_v3', JSON.stringify(db));
-        }
+    if(!nome || isNaN(valor)) return alert("Preencha os campos.");
 
-        function limpar() {
-            document.getElementById('in-nome').value = '';
-            document.getElementById('in-valor').value = '';
-            document.getElementById('in-rec').value = 'unica';
-            document.getElementById('in-num-p').value = '';
-            document.getElementById('box-parcelas').classList.add('hidden');
-        }
+    if(idEdit) {
+        const index = db.logs.findIndex(x => String(x.id) === String(idEdit));
+        if(index !== -1) db.logs[index] = { ...db.logs[index], nome, valor, tipo };
+    } else {
+        db.logs.push({ id: String(Date.now()), nome, valor, tipo, mes: dataRef.getMonth(), ano: dataRef.getFullYear(), paga: false, rec: 'unica' });
+    }
 
+    atualizarDB();
+    fecharModal();
+    renderizar();
+}
+
+function renderizar() {
+    const lista = document.getElementById('lista-financeira');
+    lista.innerHTML = '';
+
+    db.logs.forEach(i => {
+        const isR = i.tipo === 'renda';
+
+        const card = document.createElement('div');
+        card.className = "app-card flex justify-between items-center";
+
+        card.innerHTML = `
+            <div onclick="${isR ? '' : `togglePaga('${i.id}')`}" class="flex-1 cursor-pointer">
+                <h4 class="font-bold">${i.nome}</h4>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="event.stopPropagation(); abrirModal('${i.id}')">Editar</button>
+                <button onclick="event.stopPropagation(); excluir('${i.id}')">Excluir</button>
+            </div>
+        `;
+
+        lista.appendChild(card);
+    });
+}
+
+function togglePaga(id) {
+    const i = db.logs.find(x => String(x.id) === String(id));
+    if(i) i.paga = !i.paga;
+    atualizarDB();
+    renderizar();
+}
+
+function excluir(id) {
+    if(confirm("Deseja excluir?")) {
+        db.logs = db.logs.filter(x => String(x.id) !== String(id));
+        atualizarDB();
         renderizar();
-    </script>
+    }
+}
+
+function atualizarDB() {
+    localStorage.setItem('db_financeiro_v3', JSON.stringify(db));
+}
+
+function limpar() {
+    document.getElementById('in-nome').value = '';
+    document.getElementById('in-valor').value = '';
+}
+
+renderizar();
+</script>
+
 </body>
 </html>
