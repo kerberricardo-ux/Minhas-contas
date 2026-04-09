@@ -40,7 +40,7 @@
 <main class="max-w-md mx-auto px-4 -mt-10">
     <div class="mes-nav">
         <button onclick="mudarMes(-1)" class="text-blue-600 p-2 font-black text-xl">❮</button>
-        <span id="mes-atual" class="font-black text-gray-700 uppercase tracking-widest text-sm text-center">Janeiro 2026</span>
+        <span id="mes-atual" class="font-black text-gray-700 uppercase tracking-widest text-sm text-center">...</span>
         <button onclick="mudarMes(1)" class="text-blue-600 p-2 font-black text-xl">❯</button>
     </div>
 
@@ -124,7 +124,7 @@
                 document.getElementById('in-nome').value = item.nome;
                 document.getElementById('in-valor').value = item.valor;
                 document.getElementById('in-tipo').value = item.tipo;
-                freqBox.classList.add('hidden');
+                freqBox.classList.add('hidden'); // Oculta recorrência na edição simples
                 titulo.innerText = "Alterar Informação";
             }
         } else {
@@ -135,7 +135,9 @@
         modal.classList.add('active');
     }
 
-    function fecharModal() { document.getElementById('modal-form').classList.remove('active'); }
+    function fecharModal() { 
+        document.getElementById('modal-form').classList.remove('active'); 
+    }
 
     function salvar() {
         const idEdit = document.getElementById('edit-id').value;
@@ -145,11 +147,15 @@
         const rec = document.getElementById('in-rec').value;
         const numP = parseInt(document.getElementById('in-num-p').value) || 1;
 
-        if(!nome || isNaN(valor)) return alert("Preencha os campos obrigatórios.");
+        if(!nome || isNaN(valor)) return alert("Preencha descrição e valor.");
 
         if(idEdit) {
             const index = db.logs.findIndex(x => String(x.id) === String(idEdit));
-            if(index !== -1) db.logs[index] = { ...db.logs[index], nome, valor, tipo };
+            if(index !== -1) {
+                db.logs[index].nome = nome;
+                db.logs[index].valor = valor;
+                db.logs[index].tipo = tipo;
+            }
         } else {
             const m = dataRef.getMonth();
             const a = dataRef.getFullYear();
@@ -158,13 +164,16 @@
                 for(let i=0; i < numP; i++) {
                     let d = new Date(a, m + i, 1);
                     db.logs.push({ 
-                        id: String(Date.now() + i), 
+                        id: `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, 
                         nome: numP > 1 ? `${nome} (${i+1}/${numP})` : nome, 
                         valor, tipo, mes: d.getMonth(), ano: d.getFullYear(), paga: false, rec: 'parcelada' 
                     });
                 }
             } else {
-                db.logs.push({ id: String(Date.now()), nome, valor, tipo, mes: m, ano: a, paga: false, rec });
+                db.logs.push({ 
+                    id: `id_${Date.now()}`, 
+                    nome, valor, tipo, mes: m, ano: a, paga: false, rec 
+                });
             }
         }
 
@@ -183,6 +192,7 @@
 
         let rTotal = 0, dTotal = 0;
 
+        // Filtra fixos ou do mês específico
         const filtrados = db.logs.filter(i => i.rec === 'fixa' || (i.mes === mRef && i.ano === aRef));
 
         filtrados.forEach(i => {
@@ -192,17 +202,16 @@
             const card = document.createElement('div');
             card.className = `app-card flex justify-between items-center ${isR ? 'status-renda' : (i.paga ? 'status-pago opacity-60' : 'status-pendente')}`;
             
-            // ATUALIZADO: Aspas simples adicionadas em togglePaga, abrirModal e excluir para tratar IDs como String
             card.innerHTML = `
                 <div onclick="${isR ? '' : `togglePaga('${i.id}')`}" class="flex-1 cursor-pointer">
                     <h4 class="font-bold text-gray-800 ${!isR && i.paga ? 'line-through text-gray-400' : ''}">${i.nome}</h4>
                     <p class="text-[9px] text-gray-400 font-black uppercase">${i.rec === 'fixa' ? 'Recorrente' : (i.rec === 'parcelada' ? 'Parcelado' : 'Único')}</p>
                 </div>
                 <div class="text-right flex flex-col items-end gap-1">
-                    <p class="font-black ${isR ? 'text-blue-600' : 'text-red-500'}">R$ ${i.valor.toFixed(2)}</p>
+                    <p class="font-black ${isR ? 'text-blue-600' : 'text-red-500'}">R$ ${i.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</p>
                     <div class="flex gap-3">
-                        <button onclick="abrirModal('${i.id}')" class="text-[10px] text-blue-400 font-bold uppercase">Editar</button>
-                        <button onclick="excluir('${i.id}')" class="text-[10px] text-gray-400 font-bold uppercase hover:text-red-500 transition-colors">Excluir</button>
+                        <button onclick="event.stopPropagation(); abrirModal('${i.id}')" class="text-[10px] text-blue-400 font-bold uppercase">Editar</button>
+                        <button onclick="event.stopPropagation(); excluir('${i.id}')" class="text-[10px] text-gray-400 font-bold uppercase hover:text-red-500 transition-colors">Excluir</button>
                     </div>
                 </div>
             `;
@@ -210,17 +219,19 @@
         });
 
         const saldo = rTotal - dTotal;
-        document.getElementById('display-renda').innerText = `R$ ${rTotal.toFixed(2)}`;
-        document.getElementById('resumo-entradas').innerText = `R$ ${rTotal.toFixed(2)}`;
-        document.getElementById('resumo-saidas').innerText = `R$ ${dTotal.toFixed(2)}`;
-        document.getElementById('display-saldo').innerText = `R$ ${saldo.toFixed(2)}`;
+        document.getElementById('display-renda').innerText = `R$ ${rTotal.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
+        document.getElementById('resumo-entradas').innerText = `R$ ${rTotal.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
+        document.getElementById('resumo-saidas').innerText = `R$ ${dTotal.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
+        document.getElementById('display-saldo').innerText = `R$ ${saldo.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
     }
 
     function togglePaga(id) {
         const i = db.logs.find(x => String(x.id) === String(id));
-        if(i && i.tipo === 'despesa') i.paga = !i.paga;
-        atualizarDB();
-        renderizar();
+        if(i && i.tipo === 'despesa') {
+            i.paga = !i.paga;
+            atualizarDB();
+            renderizar();
+        }
     }
 
     function excluir(id) {
@@ -238,6 +249,7 @@
     function limpar() {
         document.getElementById('in-nome').value = '';
         document.getElementById('in-valor').value = '';
+        document.getElementById('in-tipo').value = 'despesa';
         document.getElementById('in-rec').value = 'unica';
         document.getElementById('in-num-p').value = '';
         document.getElementById('box-parcelas').classList.add('hidden');
