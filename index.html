@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financeiro Pro - v2</title>
+    <title>Financeiro Cloud - Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --android-blue: #1a73e8; --bg: #f8f9fa; }
         body { background-color: var(--bg); font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
         .app-card { background: white; border-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 12px; padding: 18px; border: 1px solid #eee; transition: transform 0.2s; }
-        .app-card:active { transform: scale(0.98); }
-        .btn-fab { position: fixed; bottom: 25px; right: 25px; width: 60px; height: 60px; border-radius: 30px; background: var(--android-blue); color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(26,115,232,0.4); border: none; font-size: 30px; cursor: pointer; z-index: 100; }
+        .btn-fab { position: fixed; bottom: 25px; right: 25px; width: 60px; height: 60px; border-radius: 30px; background: var(--android-blue); color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(26,115,232,0.4); border: none; font-size: 30px; z-index: 100; cursor: pointer; }
         .mes-nav { display: flex; align-items: center; justify-content: space-between; background: white; padding: 12px 20px; border-radius: 40px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(3px); }
         .modal.active { display: flex; }
         .status-pago { border-left: 6px solid #34a853; }
         .status-pendente { border-left: 6px solid #ea4335; }
         .status-renda { border-left: 6px solid #1a73e8; }
+        .status-guardar { border-left: 6px solid #f2994a; }
     </style>
 </head>
 <body class="pb-28">
@@ -26,12 +27,22 @@
         <h1 class="text-xl font-bold opacity-80 italic">Meu Financeiro</h1>
         <div class="grid grid-cols-2 gap-6 mt-4">
             <div>
-                <span class="text-xs font-medium opacity-70">Saldo do Mês</span>
-                <h2 id="display-saldo" class="text-3xl font-black text-white">R$ 0,00</h2>
+                <span class="text-xs font-medium opacity-70">Saldo Final</span>
+                <h2 id="display-saldo" class="text-3xl font-black">R$ 0,00</h2>
             </div>
             <div class="text-right">
                 <span class="text-xs font-medium opacity-70">Renda Total</span>
                 <h2 id="display-renda" class="text-xl font-bold">R$ 0,00</h2>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-blue-500/30">
+            <div>
+                <p class="text-[10px] uppercase font-bold opacity-70">Total Contas</p>
+                <p id="total-contas" class="text-sm font-black text-red-300">R$ 0,00</p>
+            </div>
+            <div class="text-right">
+                <p class="text-[10px] uppercase font-bold opacity-70">Total Guardado</p>
+                <p id="total-guardado" class="text-sm font-black text-orange-300">R$ 0,00</p>
             </div>
         </div>
     </div>
@@ -39,224 +50,202 @@
 
 <main class="max-w-md mx-auto px-4 -mt-10">
     <div class="mes-nav">
-        <button onclick="mudarMes(-1)" class="text-blue-600 p-2 font-black text-xl">❮</button>
-        <span id="mes-atual" class="font-black text-gray-700 uppercase tracking-widest text-sm text-center">...</span>
-        <button onclick="mudarMes(1)" class="text-blue-600 p-2 font-black text-xl">❯</button>
+        <button onclick="mudarMes(-1)" class="text-blue-600 font-bold p-2 text-xl">❮</button>
+        <span id="mes-atual" class="font-black uppercase text-xs tracking-widest text-gray-600">...</span>
+        <button onclick="mudarMes(1)" class="text-blue-600 font-bold p-2 text-xl">❯</button>
     </div>
-
-    <div class="grid grid-cols-2 gap-3 mb-6">
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-            <p class="text-[9px] font-black text-blue-500 uppercase">Entradas</p>
-            <p id="resumo-entradas" class="font-bold text-gray-700 text-lg">R$ 0,00</p>
-        </div>
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-            <p class="text-[9px] font-black text-red-500 uppercase">Gastos</p>
-            <p id="resumo-saidas" class="font-bold text-gray-700 text-lg">R$ 0,00</p>
-        </div>
-    </div>
-
-    <div id="lista-financeira" class="space-y-3"></div>
+    <div id="lista-financeira" class="space-y-3">Conectando ao banco...</div>
 </main>
 
 <button class="btn-fab" onclick="abrirModal()">+</button>
 
 <div id="modal-form" class="modal">
     <div class="bg-white w-full max-w-sm rounded-[30px] p-7 shadow-2xl">
-        <h3 id="modal-titulo" class="text-xl font-black mb-6 text-gray-800">Novo Lançamento</h3>
+        <h3 id="modal-titulo" class="text-xl font-black mb-6">Novo Lançamento</h3>
         <input type="hidden" id="edit-id">
-        
         <div class="space-y-4">
-            <input type="text" id="in-nome" placeholder="Descrição" class="w-full p-4 bg-gray-100 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
-            
+            <input type="text" id="in-nome" placeholder="Descrição" class="w-full p-4 bg-gray-100 rounded-2xl outline-none">
             <div class="grid grid-cols-2 gap-3">
-                <input type="number" step="0.01" id="in-valor" placeholder="Valor R$" class="p-4 bg-gray-100 border-none rounded-2xl outline-none">
-                <select id="in-tipo" class="p-4 bg-gray-100 border-none rounded-2xl outline-none font-bold text-gray-600">
+                <input type="number" step="0.01" id="in-valor" placeholder="Valor" class="p-4 bg-gray-100 rounded-2xl outline-none">
+                <select id="in-tipo" class="p-4 bg-gray-100 rounded-2xl outline-none font-bold text-gray-500">
                     <option value="despesa">Despesa</option>
                     <option value="renda">Renda</option>
+                    <option value="guardar">Guardar</option>
                 </select>
             </div>
-
-            <div id="container-frequencia">
-                <label class="text-[10px] font-black text-gray-400 uppercase ml-2">Duração / Repetição</label>
-                <select id="in-rec" onchange="checkParcelas()" class="w-full p-4 bg-gray-100 border-none rounded-2xl outline-none mt-1">
+            <div id="container-rec">
+                <label class="text-[10px] font-black text-gray-400 uppercase ml-2">Tipo de Lançamento</label>
+                <select id="in-rec" onchange="toggleParcelasField()" class="w-full p-4 bg-gray-100 rounded-2xl outline-none mt-1">
                     <option value="unica">Somente este mês</option>
-                    <option value="fixa">Fixo (Todo mês)</option>
-                    <option value="parcelada">Repetir por X meses</option>
+                    <option value="fixa">Fixo (Próximos 12 meses)</option>
+                    <option value="parcelada">Parcelado (X meses)</option>
                 </select>
             </div>
-
             <div id="box-parcelas" class="hidden">
-                <input type="number" id="in-num-p" placeholder="Quantidade de meses" class="w-full p-4 bg-gray-100 border-none rounded-2xl outline-none">
+                <input type="number" id="in-parcelas" placeholder="Número de meses" class="w-full p-4 bg-gray-100 rounded-2xl outline-none border-2 border-blue-100">
             </div>
         </div>
-
         <div class="flex gap-4 mt-8">
-            <button onclick="fecharModal()" class="flex-1 py-4 text-gray-400 font-bold">Cancelar</button>
-            <button onclick="salvar()" class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg">SALVAR</button>
+            <button onclick="fecharModal()" class="flex-1 font-bold text-gray-400">Sair</button>
+            <button id="btn-salvar" onclick="salvar()" class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg">SALVAR</button>
         </div>
     </div>
 </div>
 
 <script>
+    const DB_URL = "https://dvazohrddwbobrknlsgj.supabase.co"; 
+    const DB_KEY = "sb_publishable_gv32M9_UroKLAT0WDFXSWA_Uche--li"; 
+    const _supabase = supabase.createClient(DB_URL, DB_KEY);
+
     let dataRef = new Date();
-    let db = JSON.parse(localStorage.getItem('db_financeiro_v3')) || { logs: [] };
+    let db_registros = [];
 
-    function mudarMes(n) {
-        dataRef.setMonth(dataRef.getMonth() + n);
-        renderizar();
-    }
-
-    function checkParcelas() {
-        const isP = document.getElementById('in-rec').value === 'parcelada';
-        document.getElementById('box-parcelas').classList.toggle('hidden', !isP);
-    }
-
-    function abrirModal(id = null) {
-        const modal = document.getElementById('modal-form');
-        const titulo = document.getElementById('modal-titulo');
-        const freqBox = document.getElementById('container-frequencia');
-        limpar();
-
-        if(id) {
-            const item = db.logs.find(x => String(x.id) === String(id));
-            if(item) {
-                document.getElementById('edit-id').value = id;
-                document.getElementById('in-nome').value = item.nome;
-                document.getElementById('in-valor').value = item.valor;
-                document.getElementById('in-tipo').value = item.tipo;
-                freqBox.classList.add('hidden'); // Oculta recorrência na edição simples
-                titulo.innerText = "Alterar Informação";
-            }
-        } else {
-            document.getElementById('edit-id').value = "";
-            freqBox.classList.remove('hidden');
-            titulo.innerText = "Novo Lançamento";
+    async function carregarDados() {
+        const { data, error } = await _supabase.from('registros').select('*');
+        if (!error) {
+            db_registros = data;
+            renderizar();
         }
-        modal.classList.add('active');
     }
 
-    function fecharModal() { 
-        document.getElementById('modal-form').classList.remove('active'); 
+    function toggleParcelasField() {
+        const rec = document.getElementById('in-rec').value;
+        document.getElementById('box-parcelas').classList.toggle('hidden', rec !== 'parcelada');
     }
 
-    function salvar() {
+    async function salvar() {
         const idEdit = document.getElementById('edit-id').value;
         const nome = document.getElementById('in-nome').value;
         const valor = parseFloat(document.getElementById('in-valor').value);
         const tipo = document.getElementById('in-tipo').value;
         const rec = document.getElementById('in-rec').value;
-        const numP = parseInt(document.getElementById('in-num-p').value) || 1;
+        const numParcelas = parseInt(document.getElementById('in-parcelas').value) || 1;
+        const btn = document.getElementById('btn-salvar');
 
-        if(!nome || isNaN(valor)) return alert("Preencha descrição e valor.");
+        if(!nome || isNaN(valor)) return alert("Preencha nome e valor!");
 
-        if(idEdit) {
-            const index = db.logs.findIndex(x => String(x.id) === String(idEdit));
-            if(index !== -1) {
-                db.logs[index].nome = nome;
-                db.logs[index].valor = valor;
-                db.logs[index].tipo = tipo;
-            }
+        btn.innerText = "Processando...";
+        btn.disabled = true;
+
+        if (idEdit) {
+            await _supabase.from('registros').update({ nome, valor, tipo }).eq('id', idEdit);
         } else {
-            const m = dataRef.getMonth();
-            const a = dataRef.getFullYear();
-            
-            if(rec === 'parcelada') {
-                for(let i=0; i < numP; i++) {
-                    let d = new Date(a, m + i, 1);
-                    db.logs.push({ 
-                        id: `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, 
-                        nome: numP > 1 ? `${nome} (${i+1}/${numP})` : nome, 
-                        valor, tipo, mes: d.getMonth(), ano: d.getFullYear(), paga: false, rec: 'parcelada' 
-                    });
-                }
-            } else {
-                db.logs.push({ 
-                    id: `id_${Date.now()}`, 
-                    nome, valor, tipo, mes: m, ano: a, paga: false, rec 
+            const mesBase = dataRef.getMonth();
+            const anoBase = dataRef.getFullYear();
+            let listaParaInserir = [];
+            let voltas = (rec === 'fixa') ? 12 : (rec === 'parcelada' ? numParcelas : 1);
+
+            for (let i = 0; i < voltas; i++) {
+                let dataAlvo = new Date(anoBase, mesBase + i, 1);
+                let sufixoNome = (rec === 'parcelada') ? ` (${i+1}/${numParcelas})` : "";
+                listaParaInserir.push({
+                    id: `id_${Date.now()}_${i}`,
+                    nome: nome + sufixoNome,
+                    valor, tipo, paga: false, rec,
+                    mes: dataAlvo.getMonth(),
+                    ano: dataAlvo.getFullYear()
                 });
             }
+            await _supabase.from('registros').insert(listaParaInserir);
         }
 
-        atualizarDB();
+        await carregarDados();
         fecharModal();
-        renderizar();
+        btn.innerText = "SALVAR";
+        btn.disabled = false;
+    }
+
+    async function excluir(id) {
+        if(confirm("Deseja excluir este item?")) {
+            await _supabase.from('registros').delete().eq('id', id);
+            await carregarDados();
+        }
+    }
+
+    async function togglePaga(id) {
+        const item = db_registros.find(x => x.id === id);
+        if(item && item.tipo === 'despesa') {
+            await _supabase.from('registros').update({ paga: !item.paga }).eq('id', id);
+            await carregarDados();
+        }
+    }
+
+    function abrirModal(id = null) {
+        const modal = document.getElementById('modal-form');
+        const boxRec = document.getElementById('container-rec');
+        document.getElementById('edit-id').value = id || "";
+        document.getElementById('in-nome').value = "";
+        document.getElementById('in-valor').value = "";
+        document.getElementById('in-rec').value = "unica";
+        document.getElementById('box-parcelas').classList.add('hidden');
+
+        if (id) {
+            const item = db_registros.find(x => x.id === id);
+            document.getElementById('in-nome').value = item.nome;
+            document.getElementById('in-valor').value = item.valor;
+            document.getElementById('in-tipo').value = item.tipo;
+            boxRec.classList.add('hidden');
+            document.getElementById('modal-titulo').innerText = "Alterar Registro";
+        } else {
+            boxRec.classList.remove('hidden');
+            document.getElementById('modal-titulo').innerText = "Novo Lançamento";
+        }
+        modal.classList.add('active');
     }
 
     function renderizar() {
         const lista = document.getElementById('lista-financeira');
         const mRef = dataRef.getMonth();
         const aRef = dataRef.getFullYear();
-        
         document.getElementById('mes-atual').innerText = dataRef.toLocaleString('pt-br', { month: 'long', year: 'numeric' });
         lista.innerHTML = '';
+        
+        let rTotal = 0, dTotal = 0, gTotal = 0;
+        const filtrados = db_registros.filter(i => i.mes === mRef && i.ano === aRef);
 
-        let rTotal = 0, dTotal = 0;
-
-        // Filtra fixos ou do mês específico
-        const filtrados = db.logs.filter(i => i.rec === 'fixa' || (i.mes === mRef && i.ano === aRef));
+        if(filtrados.length === 0) {
+            lista.innerHTML = '<p class="text-center text-gray-400 py-10">Nenhum registro encontrado.</p>';
+        }
 
         filtrados.forEach(i => {
-            const isR = i.tipo === 'renda';
-            if(isR) rTotal += i.valor; else dTotal += i.valor;
+            if (i.tipo === 'renda') rTotal += i.valor;
+            if (i.tipo === 'despesa') dTotal += i.valor;
+            if (i.tipo === 'guardar') gTotal += i.valor;
 
             const card = document.createElement('div');
-            card.className = `app-card flex justify-between items-center ${isR ? 'status-renda' : (i.paga ? 'status-pago opacity-60' : 'status-pendente')}`;
-            
+            let corBorda = 'status-pendente';
+            if(i.tipo === 'renda') corBorda = 'status-renda';
+            if(i.tipo === 'guardar') corBorda = 'status-guardar';
+            if(i.tipo === 'despesa' && i.paga) corBorda = 'status-pago opacity-60';
+
+            card.className = `app-card flex justify-between items-center ${corBorda}`;
             card.innerHTML = `
-                <div onclick="${isR ? '' : `togglePaga('${i.id}')`}" class="flex-1 cursor-pointer">
-                    <h4 class="font-bold text-gray-800 ${!isR && i.paga ? 'line-through text-gray-400' : ''}">${i.nome}</h4>
-                    <p class="text-[9px] text-gray-400 font-black uppercase">${i.rec === 'fixa' ? 'Recorrente' : (i.rec === 'parcelada' ? 'Parcelado' : 'Único')}</p>
-                </div>
-                <div class="text-right flex flex-col items-end gap-1">
-                    <p class="font-black ${isR ? 'text-blue-600' : 'text-red-500'}">R$ ${i.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</p>
-                    <div class="flex gap-3">
-                        <button onclick="event.stopPropagation(); abrirModal('${i.id}')" class="text-[10px] text-blue-400 font-bold uppercase">Editar</button>
-                        <button onclick="event.stopPropagation(); excluir('${i.id}')" class="text-[10px] text-gray-400 font-bold uppercase hover:text-red-500 transition-colors">Excluir</button>
+                <div onclick="togglePaga('${i.id}')" class="flex-1 cursor-pointer">
+                    <h4 class="font-bold text-gray-800 ${i.tipo === 'despesa' && i.paga ? 'line-through opacity-50' : ''}">${i.nome}</h4>
+                    <div class="flex gap-2 mt-1">
+                        <span onclick="event.stopPropagation(); abrirModal('${i.id}')" class="text-[9px] text-blue-500 font-bold uppercase">Editar</span>
+                        <span onclick="event.stopPropagation(); excluir('${i.id}')" class="text-[9px] text-red-400 font-bold uppercase">Excluir</span>
                     </div>
                 </div>
-            `;
+                <div class="text-right">
+                    <p class="font-black ${i.tipo === 'renda' ? 'text-blue-600' : (i.tipo === 'guardar' ? 'text-orange-500' : 'text-red-500')}">R$ ${i.valor.toFixed(2)}</p>
+                </div>`;
             lista.appendChild(card);
         });
 
-        const saldo = rTotal - dTotal;
-        document.getElementById('display-renda').innerText = `R$ ${rTotal.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
-        document.getElementById('resumo-entradas').innerText = `R$ ${rTotal.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
-        document.getElementById('resumo-saidas').innerText = `R$ ${dTotal.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
-        document.getElementById('display-saldo').innerText = `R$ ${saldo.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
+        // CÁLCULO SOLICITADO: Renda menos (Despesas + Guardar)
+        const saldoFinal = rTotal - (dTotal + gTotal);
+
+        document.getElementById('display-saldo').innerText = `R$ ${saldoFinal.toFixed(2)}`;
+        document.getElementById('display-renda').innerText = `R$ ${rTotal.toFixed(2)}`;
+        document.getElementById('total-contas').innerText = `R$ ${dTotal.toFixed(2)}`;
+        document.getElementById('total-guardado').innerText = `R$ ${gTotal.toFixed(2)}`;
     }
 
-    function togglePaga(id) {
-        const i = db.logs.find(x => String(x.id) === String(id));
-        if(i && i.tipo === 'despesa') {
-            i.paga = !i.paga;
-            atualizarDB();
-            renderizar();
-        }
-    }
+    function mudarMes(n) { dataRef.setMonth(dataRef.getMonth() + n); renderizar(); }
+    function fecharModal() { document.getElementById('modal-form').classList.remove('active'); }
 
-    function excluir(id) {
-        if(confirm("Deseja apagar este lançamento?")) {
-            db.logs = db.logs.filter(x => String(x.id) !== String(id));
-            atualizarDB();
-            renderizar();
-        }
-    }
-
-    function atualizarDB() {
-        localStorage.setItem('db_financeiro_v3', JSON.stringify(db));
-    }
-
-    function limpar() {
-        document.getElementById('in-nome').value = '';
-        document.getElementById('in-valor').value = '';
-        document.getElementById('in-tipo').value = 'despesa';
-        document.getElementById('in-rec').value = 'unica';
-        document.getElementById('in-num-p').value = '';
-        document.getElementById('box-parcelas').classList.add('hidden');
-    }
-
-    renderizar();
+    carregarDados();
 </script>
-
 </body>
 </html>
